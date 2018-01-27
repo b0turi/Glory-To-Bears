@@ -24,6 +24,7 @@ function Bear(x, y, i)
 	this.stackCount = 0;
 
 	this.state = "idle";
+	this.isHat = false;
 
 	this.currentFrame = 0;
 	this.frameLength = 2;
@@ -36,7 +37,7 @@ function Bear(x, y, i)
 
 	this.draw = function()
 	{
-		var animOffset = 456;
+		var animOffset = 268;
 		
 		graphics.save();
 		graphics.scale(camera.scale, camera.scale);
@@ -48,17 +49,24 @@ function Bear(x, y, i)
 		graphics.translate(this.width/2, this.height/2);
 		graphics.rotate(this.rotation);
 		graphics.translate(-this.width/2, -this.height/2);
-		if(this.state == "idle")
-			graphics.drawImage(this.pic, 0,0, animOffset, 956, 0, 0, this.width, this.height);
-		if (this.state == "walking")
-			graphics.drawImage(this.pic, animOffset * this.currentFrame, 0, animOffset, 956, 0, 0, this.width, this.height);
-		if(this.state == "crouching")
+		if(!this.isHat)
+		{
+			if(this.state == "idle")
+				graphics.drawImage(this.pic, 0,0, animOffset, 536, 0, 0, this.width, this.height);
+			if (this.state == "walking")
+				graphics.drawImage(this.pic, animOffset * this.currentFrame, 0, animOffset, 536, 0, 0, this.width, this.height);
+			if(this.state == "crouching")
+				graphics.drawImage(this.pic, 0,0, this.width, this.height);
+		}else{
 			graphics.drawImage(this.pic, 0,0, this.width, this.height);
+		}
 		graphics.restore();
 	}
 
 	this.update = function()
 	{
+		if(this.state == "walking" && active + blocks.length != this.index)
+			this.state = "idle";
 		this.animTimer--;
 			if(this.animTimer == 0)
 			{
@@ -97,16 +105,19 @@ function Bear(x, y, i)
 
 	this.jump = function()
 	{
+		var gravVal = -20;
+		if(this.isHat)
+			gravVal /= 5;
 		if((this.onGround && this.state != "crouching"))
 		{
 			if(this.state != "clinging")
 			{
 				if(this.stackCount == 0)
 				{
-					this.grav = -20;
+					this.grav = gravVal;
 					this.y--;
 				}else{
-					findStackTop(this).grav = -20;
+					findStackTop(this).grav = gravVal;
 					findStackTop(this).y--;
 					active = findStackTop(this).index - blocks.length;
 					findStackTop(this).unstack();
@@ -122,18 +133,24 @@ function Bear(x, y, i)
 
 	this.move = function(amnt)
 	{
-		if(this.state != "crouching" && this.state != "clinging")
+		var val = amnt;
+		if(this.isHat)
+			val /= 3;
+		if(this.state == "clinging")
+			return;
+		if(this.state != "crouching")
 		{
-			this.x += amnt;
-			moveStack(this, amnt);
+			this.x += val;
+			moveStack(this, val);
 		}else if(this.state == "crouching"){
-			this.crouch(amnt);
+			this.crouch(val);
 		}
 	}
 
 	this.crouch = function(leftStick)
 	{
-		console.log("crouch");
+		if(this.isHat)
+			return;
 		if(this.onBlock == -1)
 			return;
 		var block = blocks[this.onBlock];
@@ -185,6 +202,7 @@ function Bear(x, y, i)
 			obj.x = this.x;
 			obj.y = this.y - this.height/2 - obj.height/2;
 			obj.onGround = true;
+			obj.state = "idle";
 			obj.grav = 0;
 			this.stackChild = obj;
 			obj.stackParent = this;
@@ -245,6 +263,22 @@ function Bear(x, y, i)
 		this.onGround = false;
 		removeStackCounts(this.stackParent);
 		this.stackParent = null;
+	}
+
+	this.toHat = function()
+	{
+		this.isHat = true;
+		this.y -= 50;
+		this.height = 37;
+		this.pic.src = "../assets/hat.png";
+	}
+
+	this.toBear = function()
+	{
+		this.isHat = false;
+		this.y -= 50;
+		this.height = 150;
+		this.pic.src = "../assets/bear.png";
 	}
 }
 function moveStack(root, amnt)

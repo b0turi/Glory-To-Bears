@@ -42,6 +42,7 @@
 			//Gamepad input trackers
 			var aPressed = false;
 			var xPressed = false;
+			var lTrigger = false;
 			var rightStickXMoved = false;
 			var rightStickYMoved = false;
 
@@ -179,13 +180,29 @@
 					var rightStickY = gamePad.axes[3];
 
 					var bear = bears[active];
-					console.log(bear.state);
+
+					//Hat Mechanic
+					if(!lTrigger && bear.onGround && gamePad.buttons[6].pressed && bear.stackCount == 0 && !bear.stacked && (bear.state == "idle" || bear.state == "walking"))
+					{
+						lTrigger = true;
+						bear.toHat();
+					}
+
+					if(lTrigger && !gamePad.buttons[6].pressed)
+					{
+						bear.toBear();
+						lTrigger = false;
+					}
+
 					if(Math.abs(leftStickX) > 0.2){
 						bear.move((leftStickX/Math.abs(leftStickX)) * 10);
-						if(bear.onGround && bear.state != "clinging")
-							bear.state = "walking";
-						else
-							bear.state = "idle";
+						if(bear.state != "crouching" && bear.state != "clinging")
+						{
+							if(bear.onGround)
+								bear.state = "walking";
+							else
+								bear.state = "idle";
+						}
 					}else if (bear.state == "walking"){
 						bear.state = "idle";
 					}
@@ -219,7 +236,7 @@
 					}
 
 					var closestInd = -1;
-					if(bears[active].onGround && !bears[active].clinging)
+					if(bears[active].onGround && bears[active].state != "clinging" && bears[active].state != "hat")
 					{
 						if(Math.abs(rightStickX) > 0.9 && !rightStickXMoved && Math.abs(rightStickY) < 0.9){
 							rightStickXMoved = true;
@@ -346,7 +363,7 @@
 
 		    function gameUpdate() {
 		    	camera.x+=(bears[active].x-camera.x)/4;
-		    	camera.y+=(bears[active].y-camera.y)/15;
+		    	camera.y+=((bears[active].y - bears[active].height * bears[active].stackCount/2)-camera.y)/15;
 				camOffset = {x: -camera.x + screen.width/2, y: -camera.y + screen.height/2};
 
 		    	for(var i = 0;i<bears.length; i++){
