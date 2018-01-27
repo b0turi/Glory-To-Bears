@@ -62,14 +62,22 @@ function Block(x, y, xInd, yInd, ind, style)
 	}
 
 	this.isLeftCorner = function() {
-		return (map[this.xIndex - 1][this.yIndex] == 0 &&
-			map[this.xIndex -1][this.yIndex -1] == 0 && 
-			map[this.xIndex][this.yIndex-1] == 0);
+		if(this.xIndex == 0 || this.xIndex == map[0].length-1)
+			return true;
+		if(this.yIndex == 0)
+			return true;
+		return (map[this.yIndex][this.xIndex - 1] == 0 &&
+			map[this.yIndex -1][this.xIndex -1] == 0 && 
+			map[this.yIndex-1][this.xIndex] == 0);
 	}
 
 	this.isRightCorner = function() {
-		return (map[this.xIndex + 1][this.yIndex] == 0 &&
-			map[this.xIndex + 1][this.yIndex + 1] == 0 && 
-			map[this.xIndex][this.yIndex + 1] == 0);
+		if(this.yIndex == 0 || this.yIndex == map.length-1)
+			return true;
+		if(this.xIndex == 0 || this.xIndex == map[0].length-1)
+			return true;
+		return (map[this.yIndex][this.xIndex + 1] == 0 &&
+			map[this.yIndex - 1][this.xIndex + 1] == 0 && 
+			map[this.yIndex - 1][this.xIndex] == 0);
 	}
 }

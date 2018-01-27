@@ -5,11 +5,13 @@ function Bear(x, y, i)
 	this.index = i;
 
 	this.dir = 1;
+	this.clingDir = 1;
 
 	this.width = 75;
 	this.height = 150;
 
 	this.grav = 0;
+	this.xGrav = 0;
 	this.floor = defaultFloor;
 
 	this.onGround = false; 
@@ -40,31 +42,50 @@ function Bear(x, y, i)
 
 	this.update = function()
 	{
-		this.y += this.grav;
-		if(this.y + this.height/2 < this.floor) 
-		{
-			this.grav++;
-			this.onGround = false;
-		}else{
-			this.grav = 0;
-			this.y = this.floor - this.height/2;
-			this.onGround = true;
-		}
+			this.y += this.grav;
+			if(this.y + this.height/2 < this.floor) 
+			{
+				this.grav++;
+				this.onGround = false;
+			}else{
+				this.grav = 0;
+				this.y = this.floor - this.height/2;
+				this.onGround = true;
+			}
+
+			this.x += this.xGrav;
+			if(this.xGrav != 0)
+			{
+				if(this.xGrav > 0)
+					this.xGrav--;
+				if(this.xGrav < 0)
+					this.xGrav++;
+			}
+
+			if(this.clinging && this.grav == 0)
+				this.clinging = false;
 	}
 
 	this.jump = function()
 	{
-		if(this.onGround && !this.crouching)
+		if((this.onGround && !this.crouching) || this.clinging)
 		{
-			if(this.stackCount == 0)
+			if(!this.clinging)
 			{
-				this.grav = -30;
-				this.y--;
+				if(this.stackCount == 0)
+				{
+					this.grav = -20;
+					this.y--;
+				}else{
+					findStackTop(this).grav = -20;
+					findStackTop(this).y--;
+					active = findStackTop(this).index - blocks.length;
+					findStackTop(this).unstack();
+				}
 			}else{
-				findStackTop(this).grav = -30;
-				findStackTop(this).y--;
-				active = findStackTop(this).index - blocks.length;
-				findStackTop(this).unstack();
+				this.grav = -23;
+				this.y += this.grav;
+				this.xGrav = 15 * this.clingDir;
 			}
 		}
 	}
@@ -72,21 +93,22 @@ function Bear(x, y, i)
 	this.move = function(amnt)
 	{
 		
-		if(!this.crouching)
+		if(!this.crouching && !this.clinging)
 		{
 			this.x += amnt;
 			moveStack(this, amnt);
-		}else{
+		}else if(this.crouching){
 			this.crouch(amnt);
 		}
 	}
 
 	this.crouch = function(leftStick)
 	{
+		if(this.onBlock == -1)
+			return;
 		var block = blocks[this.onBlock];
 		if((block.isLeftCorner() || block.isRightCorner()) && this.stackCount == 0 && !this.stacked)
 		{
-			this.crouching = true;
 			this.width = 150;
 			this.height = 75;
 			this.y = block.y - this.height/2;
@@ -99,26 +121,35 @@ function Bear(x, y, i)
 				this.x = block.x - block.width/2;
 				this.dir = 1;
 			}
-
+			if(leftStick < 0.1 && block.isLeftCorner() && block.isRightCorner() && !this.crouching)
+			{
+				this.x = block.x + this.dir * block.width/2;
+				this.dir *= -1;
+			}
+			this.crouching = true;
 			this.pic.src = "../assets/crouch.png";
 		}
 	}
 
 	this.uncrouch = function(){
+		console.log("uncrouch");
 		this.crouching = false;
 		this.width = 75;
 		this.height = 150;
 		this.y -= this.width/2;
-		this.x += this.width/2 * (-dir);
+		this.x += this.width/2 * (this.dir);
+		this.dir *= -1;
+		this.pic.src = "../assets/bear.png";
 	}
 
 	this.checkCollision = function(obj)
 	{
 		//Stacking feature
 
-		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 - 10 && this.stackCount == 0 && obj.y + obj.height/2 > this.y-this.height/2 && obj.y < this.y && !obj.stacked && !this.crouching)
+		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 - 15 && this.stackCount == 0 && obj.y + obj.height/2 > this.y-this.height/2 && obj.y < this.y && !obj.stacked && !this.crouching && !obj.clinging)
 		{
 			obj.stacked = true;
+			obj.xGrav = 0;
 			var floorDiff = (obj.floor - (this.y - this.height/2));
 			setStackFloor(-floorDiff, obj);
 			obj.x = this.x;
@@ -135,7 +166,7 @@ function Bear(x, y, i)
 			for(i = 0; i<=obj.stackCount; i++)
 				addStackCounts(this);
 			return;
-		}else if(Math.abs(obj.x-this.x)<this.width/2+obj.width/2&&obj.y+obj.height/2<=this.y - this.height/2&&obj.floor>=this.y - this.height/2&&obj.onBlock!=this.index&&!obj.stacked && this.crouching)
+		}else if(Math.abs(obj.x-this.x)<this.width/2+obj.width/2&&obj.y+obj.height/2<=this.y - this.height/2&&obj.floor>=this.y - this.height/2&&obj.onBlock!=this.index&&!obj.stacked && this.crouching && !obj.clinging)
 		{
 			obj.floor = this.y-this.height/2;
 			obj.onBlock = this.index;
@@ -149,21 +180,27 @@ function Bear(x, y, i)
 		}
 
 		//Cling when crouching
-		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 && this.crouching && obj.y - obj.height/2 < this.y + this.height/2 && obj.y > this.y && !obj.stacked)
+		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 && this.crouching && obj.y - obj.height/2 < this.y + this.height/2 && obj.y > this.y && !obj.stacked && !obj.clinging && obj.grav <= 0)
 		{
 			//Make sure the crouching bear is facing the right direction
 			if((this.dir == -1 && obj.x - obj.width/2 >= this.x)||(this.dir == 1 && obj.x + obj.width/2 <= this.x))
 			{
+				obj.clinging = true;
+				obj.x = this.x + (-this.dir * this.width/4);
+				obj.y = this.y + this.height/2 + obj.height/2 - 10;
+				obj.grav = 0;
+				obj.floor = obj.y + obj.height/2;
+				obj.clingDir = this.dir;
 			}
 		}
 
-		if(obj.x < this.x && obj.x + obj.width/2 > this.x-this.width/2 && Math.abs(obj.y-this.y) < obj.height/2 + this.height/2 - 5)
+		if(obj.x < this.x && obj.x + obj.width/2 > this.x-this.width/2 && Math.abs(obj.y-this.y) < obj.height/2 + this.height/2 - 5 && !obj.clinging)
 		{
 			setStackX(this.x-this.width/2-obj.width/2, obj, true);
 			setStackX(this.x-this.width/2-obj.width/2, obj, false);
 		}
 
-		if(obj.x > this.x && obj.x - obj.width/2 < this.x+this.width/2 && Math.abs(obj.y-this.y) < obj.height/2 + this.height/2 - 5)
+		if(obj.x > this.x && obj.x - obj.width/2 < this.x+this.width/2 && Math.abs(obj.y-this.y) < obj.height/2 + this.height/2 - 5 && !obj.clinging)
 		{
 			setStackX(this.x+this.width/2+obj.width/2, obj, true);
 			setStackX(this.x+this.width/2+obj.width/2, obj, false);
