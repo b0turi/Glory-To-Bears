@@ -121,7 +121,6 @@
 				{
 					$(window).on("gamepadconnected", function() {
 		                hasGP = true;
-		                console.log("happy bois");
 		                if(intervalCount == 0)
 		                	setInterval(gpInput,16);
 		                intervalCount++;
@@ -129,7 +128,6 @@
 		 
 		            $(window).on("gamepaddisconnected", function() {
 		                hasGP = false;
-		                console.log("sad bois");
 		                clearInterval(gpInput);
 		            });
 		 
@@ -170,6 +168,7 @@
 			//Checks for gamepad input
 			function gpInput()
 			{
+
 				if(hasGP)
 				{
 					var gamePad = navigator.getGamepads()[0];
@@ -180,9 +179,15 @@
 					var rightStickY = gamePad.axes[3];
 
 					var bear = bears[active];
-
+					console.log(bear.state);
 					if(Math.abs(leftStickX) > 0.2){
 						bear.move((leftStickX/Math.abs(leftStickX)) * 10);
+						if(bear.onGround && bear.state != "clinging")
+							bear.state = "walking";
+						else
+							bear.state = "idle";
+					}else if (bear.state == "walking"){
+						bear.state = "idle";
 					}
 					if(gamePad.buttons[0].pressed && !aPressed){
 						bear.jump();
@@ -192,9 +197,9 @@
 					}
 
 					//Stop clinging
-					if(leftStickY > 0.9 && bear.clinging)
+					if(leftStickY > 0.9 && bear.state == "clinging")
 					{
-						bear.clinging = false;
+						bear.state = "idle";
 						bear.y += 5;
 						bear.floor = defaultFloor;
 					}
@@ -202,11 +207,11 @@
 
 					//Crouching
 					if(gamePad.buttons[2].pressed && !xPressed){
-						if(!bear.crouching){
-							bear.crouch(leftStickX);
+						if(bear.state == "crouching"){
+							bear.uncrouch();
 						}
 						else{
-							bear.uncrouch();
+							bear.crouch(leftStickX);
 						}
 						xPressed = true;
 					}else if(!gamePad.buttons[2].pressed){
@@ -361,11 +366,10 @@
 		    	}
 
 		    	var max = maxCamDistance(bears);
-		    	if(max[0] > screenHH)
-		    		camera.scale = screenHH/max[1];
-		    	else if(max[0] < 300 && 300/max[1] < 1)
-		    		camera.scale = 300/max[1];
-		    	console.log(max[1]);
+		    	if(max[0] > screenWH)
+		    		camera.scale = screenWH/max[1];
+		    	else if(max[0] < 400 && (400)/max[1] < 1.5)
+		    		camera.scale = (400)/max[1];
 		    	arrow.update();
 		    	gameDraw();
 		    }
