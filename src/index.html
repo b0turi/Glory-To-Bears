@@ -1,0 +1,370 @@
+<html>
+	<script type="text/javascript" src="jquery-1.8.1.min.js"></script>
+	<script type="text/javascript" src="Bear.js"></script>
+	<script type="text/javascript" src="Block.js"></script>
+	<head>
+		<style>
+		.starting-canvas {
+			border: 4px solid black;
+			margin: 0;
+		    position: absolute;
+		    top: 50%;
+		    left: 50%;
+		    transform: translate(-50%, -50%);
+		}
+		body {
+			background-color: #660000;
+		}
+		</style>
+	</head>
+	<body>
+		<div class="starting-canvas">
+			<canvas id="GameCanvas" width="200" height="100"></canvas>
+		</div>
+		<script>
+			var canvas = document.getElementById("GameCanvas");
+			var graphics = canvas.getContext("2d");
+
+
+			var defaultFloor = 1087; 
+
+			var loop; //Holds the game loop
+
+			//Gamepad input trackers
+			var aPressed = false;
+			var xPressed = false;
+			var rightStickXMoved = false;
+			var rightStickYMoved = false;
+
+			var arrow = new Indicator(-50, -50);
+			var map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],						
+			[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0],];
+
+
+
+			//A list containing all the bears currently within the player's control
+			var bears = [];
+			var blocks = [];
+
+			
+
+			//The index in bears[] of the bear the player is currently controlling
+			var active = 0;
+
+			//Send the game into fullscreen and start the game
+			function fullscreen(){
+				var canvas = document.getElementById("GameCanvas");
+
+				//Use whatever fullscreen method the current browser uses
+			    if(canvas.webkitRequestFullScreen) {
+			        canvas.webkitRequestFullScreen();
+			    } else {
+			        canvas.mozRequestFullScreen();
+			    }            
+
+			    //Reset the canvas size
+			    canvas.width  = screen.width;
+				canvas.height = screen.height;
+
+				canvas.removeEventListener("click", fullscreen);
+
+				startGame();
+			}
+
+			//End the fullscreen and restore the original canvas size
+			function endfullscreen(){
+				var canvas = document.getElementById("GameCanvas");
+
+				if(document.cancelFullScreen) {
+					document.cancelFullScreen();
+				} else if (document.mozCancelFullScreen) {
+					document.mozCancelFullScreen();
+				} else if (document.webkitCancelFullScreen) {
+					document.webkitCancelFullScreen();
+				}
+
+				canvas.width = 200;
+				canvas.height = 100;
+
+				canvas.addEventListener("click", fullscreen);
+			}
+
+			//Set initial values when booting the game
+			function startGame()
+			{
+				//Set up controller input
+				if(canGame())
+				{
+					$(window).on("gamepadconnected", function() {
+		                hasGP = true;
+		                setInterval(gpInput,25);
+		            });
+		 
+		            $(window).on("gamepaddisconnected", function() {
+		                hasGP = false;
+		                clearInterval(gpInput);
+		            });
+		 
+		            //setup an interval for Chrome
+		            var checkGP = window.setInterval(function() {
+		                if(navigator.getGamepads()[0]) {
+		                    if(!hasGP) $(window).trigger("gamepadconnected");
+		                    window.clearInterval(checkGP);
+		                }
+		            }, 500);
+		        }
+
+
+		        //Load the tile based map for the level
+		        for(var i = 0;i<map.length;i++)
+		        {
+		        	for (var j = 0;j<map[0].length;j++)
+		        	{
+		        		if(map[i][j] != 0)
+		        		{
+		        			var b = new Block(j*75, i*75, j, i, blocks.length, map[i][j] - 1);
+		        			blocks.push(b);
+		        		}
+		        	}
+		        }
+
+		        //Add a temporary bear
+				bears.push(new Bear(400, 400, blocks.length));
+
+				bears.push(new Bear(850, 400, blocks.length + 1));
+
+				bears.push(new Bear(1200, 400, blocks.length + 2));
+
+		        //Start the game loop
+		        loop = setInterval(gameUpdate, 16);
+			}
+
+			//Checks for gamepad input
+			function gpInput()
+			{
+				var gamePad = navigator.getGamepads()[0];
+				var leftStickX = gamePad.axes[0];
+				var leftStickY = gamePad.axes[1];
+
+				var rightStickX = gamePad.axes[2];
+				var rightStickY = gamePad.axes[3];
+
+				var bear = bears[active];
+
+				if(Math.abs(leftStickX) > 0.2){
+					bear.move((leftStickX/Math.abs(leftStickX)) * 10);
+				}
+				if(gamePad.buttons[0].pressed && !aPressed){
+					bear.jump();
+					aPressed = true;
+				}else if(!gamePad.buttons[0].pressed){
+					aPressed = false;
+				}
+				
+
+				//Crouching
+				if(gamePad.buttons[2].pressed && !xPressed){
+					if(!bear.crouching)
+						bear.crouch(leftStickX);
+					else
+						bear.uncrouch();
+					xPressed = true;
+				}else if(!gamePad.buttons[2].pressed){
+					xPressed = false;
+				}
+
+				var closestInd = -1;
+				if(bears[active].onGround)
+				{
+					if(Math.abs(rightStickX) > 0.9 && !rightStickXMoved && Math.abs(rightStickY) < 0.9){
+						rightStickXMoved = true;
+						
+						var closestCandidates = findClosestX(rightStickX, bears, bears[active]);
+
+						if(closestCandidates.length == 1){
+							active = closestCandidates[0];
+						}else{
+							var newClosestCandidates = [];
+							for (var j = 0;j<closestCandidates.length;j++)
+								newClosestCandidates.push(bears[closestCandidates[j]]);
+							var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
+							if(nextClosestCandidates.length >= 1)
+								active = nextClosestCandidates[0];
+						}
+
+					}else if(Math.abs(rightStickX) < 0.9 && rightStickXMoved) {
+						rightStickXMoved = false;
+					}else if(Math.abs(rightStickY) > 0.9 && !rightStickYMoved  && Math.abs(rightStickX) < 0.9){
+						rightStickYMoved = true;
+						
+						var closestCandidates = findClosestY(rightStickY, bears, bears[active]);
+
+						if(closestCandidates.length == 1){
+							active = closestCandidates[0];
+						}else{
+							var newClosestCandidates = [];
+							for (var j = 0;j<closestCandidates.length;j++)
+								newClosestCandidates.push(bears[closestCandidates[j]]);
+							var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
+							if(nextClosestCandidates.length >= 1)
+								active = nextClosestCandidates[0];
+						}
+
+					}else if(Math.abs(rightStickY) < 0.9 && rightStickYMoved) {
+						rightStickYMoved = false;
+					}
+				}
+			}
+ 			
+ 			//Helper functions for selecting the active bear
+ 			function findClosestX(val, arr, activeBear)
+ 			{	
+ 				var closestInds = [];
+ 					if(val < 0)
+					{
+						var closestX = -Number.MAX_SAFE_INTEGER;
+						for(var i = 0; i< arr.length; i++)
+						{
+							if(arr[i]!=activeBear && arr[i].x <= activeBear.x && arr[i].x >= closestX && !arr[i].stacked)
+							{
+								if(arr[i].x > closestX)
+									closestInds = [];
+								closestX = arr[i].x;
+								closestInds.push(i);
+							}
+						}
+					} else {
+						var closestX = Number.MAX_SAFE_INTEGER;
+						for(var i = 0; i< arr.length; i++)
+						{
+							if(arr[i]!=activeBear && arr[i].x >= activeBear.x && arr[i].x <= closestX && !arr[i].stacked)
+							{
+								if(arr[i].x < closestX)
+									closestInds = [];
+								closestX = arr[i].x;
+								closestInds.push(i);
+							}
+						}
+					}
+					if(closestInds.length != 1)
+						return closestInds;
+					else{
+						closestInd = closestInds[0];	
+						return [closestInds[0]];
+					}
+ 			}
+
+ 			//Helper functions for selecting the active bear
+ 			function findClosestY(val, arr, activeBear)
+ 			{	
+ 				var closestInds = [];
+ 					if(val < 0)
+					{
+						var closestY = -Number.MAX_SAFE_INTEGER;
+						for(var i = 0; i< arr.length; i++)
+						{
+							if(arr[i]!=activeBear && arr[i].y <= activeBear.y && arr[i].y >= closestY && !arr[i].stacked)
+							{
+								if(arr[i].y > closestY)
+									closestInds = [];
+								closestY = arr[i].y;
+								closestInds.push(i);
+							}
+						}
+					} else {
+						var closestY = Number.MAX_SAFE_INTEGER;
+						for(var i = 0; i< arr.length; i++)
+						{
+							if(arr[i]!=activeBear && arr[i].y >= activeBear.y && arr[i].y <= closestY && !arr[i].stacked)
+							{
+								if(arr[i].y < closestY)
+									closestInds = [];
+								closestY = arr[i].y;
+								closestInds.push(i);
+							}
+						}
+					}
+					if(closestInds.length != 1)
+						return closestInds;
+					else{
+						closestInd = closestInds[0];	
+						return [closestInds[0]];
+					}
+ 			}
+
+
+ 			//Check if there's a controller connected
+			function canGame() {
+		        return "getGamepads" in navigator;
+		    }
+
+		    function gameUpdate() {
+		    	for(var i = 0;i<bears.length; i++){
+		    		bears[i].update();
+		    	}
+					for(var j = 0;j<bears.length;j++){
+		    			if(j != active)
+		    				bears[j].checkCollision(bears[active]);
+		    		}
+
+		    	for(var b = 0;b<blocks.length; b++)
+		    	{
+		    		blocks[b].update();
+		    		for(var r = 0; r< bears.length; r++)
+		    			blocks[b].checkCollision(bears[r]);
+		    	}
+
+		    		
+
+		    	arrow.update();
+		    	gameDraw();
+		    }
+
+		    function gameDraw() {
+		    	graphics.clearRect(0,0,canvas.width,canvas.height);
+		    	for(var i = 0;i<bears.length; i++){
+		    		bears[i].draw();
+		    	}
+		    	for(i = 0;i<blocks.length;i++)
+		    		blocks[i].draw();
+		    	arrow.draw();
+		    }
+
+			canvas.addEventListener("click",fullscreen);
+
+			function Indicator(x, y) {
+				this.x = x;
+				this.y = y;
+
+				this.pic = new Image();
+				this.pic.src = "../assets/arrow.png";
+
+				this.moveTo = function(newX,newY) {
+					this.x = newX;
+					this.y = newY;
+				}
+
+				this.draw = function(){
+					graphics.drawImage(this.pic, this.x - 25, this.y - 25, 50, 50);
+				}
+
+				this.update = function() {
+					this.moveTo(bears[active].x, bears[active].y  - bears[active].height/2 - bears[active].height * bears[active].stackCount - 35);
+				}
+			}
+
+
+		</script>
+	</body>
+</html>
