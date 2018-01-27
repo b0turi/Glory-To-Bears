@@ -16,6 +16,7 @@ function Bear(x, y, i)
 
 	this.onGround = false; 
 	this.onBlock = -1;
+	this.animTimer = 5;
 
 	this.stacked = false;
 	this.stackParent = null;
@@ -24,24 +25,50 @@ function Bear(x, y, i)
 
 	this.crouching = false;
 	this.clinging = false;
+	this.walking = false;
+
+	this.walkFrame = false;
 
 	this.pic = new Image();
 	this.pic.src = "../assets/bear.png";
 
+	this.screenWH = screen.width/2;
+	this.screenHH = screen.height/2;
+
 	this.draw = function()
 	{
+		var animOffset = 456;
+		
 		graphics.save();
-		graphics.translate(this.x, this.y);
-		if(this.dir == -1)
-		{
+		graphics.scale(camera.scale, camera.scale);
+		graphics.translate(this.x-this.width/2-camera.x+screenWH* 1/camera.scale,this.y-this.height/2-camera.y+screenHH* 1/camera.scale);
+		if(this.dir == -1){
+			graphics.translate(this.width,0);
 			graphics.scale(-1, 1);
 		}
-		graphics.drawImage(this.pic, -this.width/2, -this.height/2, this.width, this.height);
+		graphics.translate(this.width/2, this.height/2);
+		graphics.rotate(this.rotation);
+		graphics.translate(-this.width/2, -this.height/2);
+		if(this.walkFrame)
+			graphics.drawImage(this.pic, animOffset,0, animOffset, 956, 0, 0, this.width, this.height);
+		else
+			graphics.drawImage(this.pic, 0,0, animOffset, 956, 0, 0, this.width, this.height);
 		graphics.restore();
 	}
 
 	this.update = function()
 	{
+		if(this.walking)
+		{
+			this.animTimer--;
+			if(this.animTimer == 0)
+			{
+				this.animTimer = 5;
+				this.walkFrame = !this.walkFrame;
+			}
+		}
+		if(this.spinning)
+			this.rotation+= this.dir * 12 * (Math.PI/180);
 			this.y += this.grav;
 			if(this.y + this.height/2 < this.floor) 
 			{
@@ -51,6 +78,8 @@ function Bear(x, y, i)
 				this.grav = 0;
 				this.y = this.floor - this.height/2;
 				this.onGround = true;
+				this.spinning = false;
+				this.rotation = 0;
 			}
 
 			this.x += this.xGrav;
@@ -68,7 +97,7 @@ function Bear(x, y, i)
 
 	this.jump = function()
 	{
-		if((this.onGround && !this.crouching) || this.clinging)
+		if((this.onGround && !this.crouching) || (this.onGround && this.clinging))
 		{
 			if(!this.clinging)
 			{
@@ -85,7 +114,8 @@ function Bear(x, y, i)
 			}else{
 				this.grav = -23;
 				this.y += this.grav;
-				this.xGrav = 15 * this.clingDir;
+				this.xGrav = 23 * this.clingDir;
+				this.spinning = true;
 			}
 		}
 	}
@@ -100,6 +130,7 @@ function Bear(x, y, i)
 		}else if(this.crouching){
 			this.crouch(amnt);
 		}
+		this.walking = true;
 	}
 
 	this.crouch = function(leftStick)
@@ -146,7 +177,7 @@ function Bear(x, y, i)
 	{
 		//Stacking feature
 
-		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 - 15 && this.stackCount == 0 && obj.y + obj.height/2 > this.y-this.height/2 && obj.y < this.y && !obj.stacked && !this.crouching && !obj.clinging)
+		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 - 15 && this.stackCount == 0 && obj.y + obj.height/2 > this.y-this.height/2 && obj.y < this.y && !obj.stacked && !this.crouching && !obj.crouching && !obj.clinging)
 		{
 			obj.stacked = true;
 			obj.xGrav = 0;

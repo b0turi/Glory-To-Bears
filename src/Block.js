@@ -13,11 +13,13 @@ function Block(x, y, xInd, yInd, ind, style)
 
 	this.style = style;
 	this.picInd = style;
+
 	this.draw = function()
 	{
 		graphics.save();
-		graphics.translate(this.x, this.y);
-		graphics.drawImage(this.pic, -this.width/2, -this.height/2, this.width, this.height);
+		graphics.scale(camera.scale, camera.scale);
+		graphics.translate(this.x-this.width/2-camera.x+screenWH* 1/camera.scale,this.y-this.height/2-camera.y+screenHH* 1/camera.scale);
+		graphics.drawImage(this.pic,0,0, this.width, this.height);
 		graphics.restore();
 	}
 	this.update = function()
