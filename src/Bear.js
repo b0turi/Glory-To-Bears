@@ -29,20 +29,12 @@ function Bear(x, y, i)
 	this.currentFrame = 0;
 	this.frameLength = 2;
 
-	this.mainPic = new Image();
-	this.mainPic.src = "../assets/bear.png";
-
-	this.sitPic = new Image();
-	this.sitPic.src = "../assets/sit.png";
-
-	this.crouchPic = new Image();
-	this.crouchPic.src = "../assets/crouch.png";
-
-	this.clingPic = new Image();
-	this.clingPic.src = "../assets/clinging.png";
-
-	this.hatPic = new Image();
-	this.hatPic.src = "../assets/hat.png";
+	this.mainPic = images[8];
+	this.sitPic = images[9];
+	this.crouchPic = images[10];
+	this.clingPic = images[11];
+	this.spinPic = images[12];
+	this.hatPic = images[13];
 
 	this.screenWH = screen.width/2;
 	this.screenHH = screen.height/2;
@@ -65,16 +57,21 @@ function Bear(x, y, i)
 		graphics.shadowColor = "black";
 		if(!this.isHat)
 		{
+
 			if(this.state == "idle" && !this.stacked)
 				graphics.drawImage(this.mainPic, 0,0, animOffset, 536, 0, 0, this.width, this.height);
-			if(this.stacked)
+			else if(this.stacked)
 				graphics.drawImage(this.sitPic, 0, 0, this.width, this.height);
-			if (this.state == "walking")
+			else if (this.state == "walking")
 				graphics.drawImage(this.mainPic, animOffset * this.currentFrame, 0, animOffset, 536, 0, 0, this.width, this.height);
-			if(this.state == "crouching")
+			else if(this.state == "crouching")
 				graphics.drawImage(this.crouchPic, 0,0, this.width, this.height);
-			if(this.state == "clinging")
+			else if(this.state == "clinging" && this.onGround)
 				graphics.drawImage(this.clingPic, 0,0, this.width, this.height);
+			else if(this.state == "clinging" && !this.onGround)
+				graphics.drawImage(this.spinPic, 0,0, this.width, this.height/1.5);
+			else if(this.state =="idle" && !this.onGround && this.rotation != 0)
+				graphics.drawImage(this.spinPic, 0,0, this.width, this.height/1.5);
 		}else{
 			graphics.drawImage(this.hatPic, 0,0, this.width, this.height);
 		}
@@ -98,7 +95,7 @@ function Bear(x, y, i)
 					this.currentFrame = 0;
 			}	
 		if(this.spinning)
-			this.rotation+= 12 * (Math.PI/180);
+			this.rotation+= 4 * (Math.PI/180);
 			this.y += this.grav;
 			if(this.y + this.height/2 < this.floor) 
 			{
@@ -139,8 +136,9 @@ function Bear(x, y, i)
 					this.grav = gravVal;
 					this.y--;
 				}else{
-					findStackTop(this).grav = gravVal;
+					findStackTop(this).grav = gravVal - 3;
 					findStackTop(this).y--;
+					findStackTop(this).onBlock = -1;
 					active = findStackTop(this).index - initBlockTotal;
 					findStackTop(this).unstack();
 				}
@@ -182,18 +180,26 @@ function Bear(x, y, i)
 			this.height = 75;
 			this.y = block.y - this.height/2;
 
-			if(leftStick > 0 && block.isRightCorner()){
+			if(block.isRightCorner() && !block.isLeftCorner()){
 				this.x = block.x + block.width/2;
 				this.dir = -1;
 			}
-			if(leftStick < 0 && block.isLeftCorner()){
+			if(block.isLeftCorner()&& !block.isRightCorner()){
 				this.x = block.x - block.width/2;
 				this.dir = 1;
 			}
-			if(leftStick < 0.1 && block.isLeftCorner() && block.isRightCorner() && this.state!="crouching")
+			if(block.isLeftCorner() && block.isRightCorner())
 			{
-				this.x = block.x + this.dir * block.width/2;
-				this.dir *= -1;
+				if(leftStick>0)
+				{
+					this.x = block.x + block.width/2;
+					this.dir = -1;
+				}
+				else{
+
+					this.x = block.x - block.width/2;
+					this.dir = 1;
+				}
 			}
 			this.state = "crouching";
 		}
@@ -212,12 +218,11 @@ function Bear(x, y, i)
 		this.x += this.width/2 * (this.dir);
 		this.dir *= -1;
 	}
-
 	this.checkCollision = function(obj)
 	{
 		//Stacking feature
 
-		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 - 15 && this.stackCount == 0 && obj.y + obj.height/2 > this.y && obj.y < this.y + this.height/2 && !obj.stacked && this.state!="crouching" && !(obj.state=="crouching" || obj.state == "clinging"))
+		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 - 15 && this.stackCount == 0 && obj.y + obj.height/2 > this.y && obj.y < this.y + this.height/2 && !obj.stacked && this.state!="crouching" && !obj.isHat && !(obj.state=="crouching" || obj.state == "clinging"))
 		{
 			obj.stacked = true;
 			obj.xGrav = 0;
@@ -281,13 +286,13 @@ function Bear(x, y, i)
 				setStackX(this.x+this.width/2+obj.width/2, obj, false);
 			}
 		}else{
-			if(obj.x < this.x && obj.x + obj.width/2 > this.x-this.width/2 && Math.abs(obj.y-this.y) < obj.height/2 + this.height/2 - 5 && obj.state != "clinging")
+			if(obj.x < this.x && obj.x + obj.width/2 > this.x-this.width/2 && Math.abs(obj.y-(this.y-this.height/4)) < obj.height/2 - 5 && obj.state != "clinging")
 			{
 				setStackX(this.x-this.width/2-obj.width/2, obj, true);
 				setStackX(this.x-this.width/2-obj.width/2, obj, false);
 			}
 
-			if(obj.x > this.x && obj.x - obj.width/2 < this.x+this.width/2 && Math.abs(obj.y-this.y) < obj.height/2  + this.height/2 - 5 && obj.state != "clinging")
+			if(obj.x > this.x && obj.x - obj.width/2 < this.x+this.width/2 && Math.abs(obj.y-(this.y-this.height/4)) < obj.height/2  - 5 && obj.state != "clinging")
 			{
 				setStackX(this.x+this.width/2+obj.width/2, obj, true);
 				setStackX(this.x+this.width/2+obj.width/2, obj, false);
@@ -368,7 +373,14 @@ function setStackX (amnt, obj, updown)
 		if(obj.stacked && !updown)
 			setStackX(amnt, obj.stackParent, false);
 	}
-
+function pushStackY(amnt, obj)
+{
+	obj.y = amnt;
+	if(obj.stacked)
+		pushStackY(amnt + this.height/2);
+	else
+		obj.grav = 0;
+}
 function setStackFloor (amnt, obj)
 {
 	obj.floor += amnt;

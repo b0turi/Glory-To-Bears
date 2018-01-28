@@ -5,6 +5,9 @@
 	<script type="text/javascript" src="DialogueBox.js"></script>
 	<script type="text/javascript" src="Door.js"></script>
 	<script type="text/javascript" src="Key.js"></script>
+	<script type="text/javascript" src="Switch.js"></script>
+
+	<script type="text/javascript" src="Pedestrian.js"></script>
 	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 	<head>
 		<style>
@@ -42,7 +45,13 @@
 		</style>
 	</head>
 	<body>
-		<p class="centered" style="font-family: Kremlin; font-size: 18pt; margin-top: -150px;">GLOBAL GAME JAM 2018</p>
+		<audio id="hatTheme"><source src="../assets/audio/hat.wav" type="audio/wav"></audio>
+		<audio id="mainTheme"><source src="../assets/audio/main.wav" type="audio/wav"></audio>
+		<audio id="cutscene"><source src="../assets/audio/cutscene.wav" type="audio/wav"></audio>
+		<audio id="menu"><source src="../assets/audio/menu.wav" type="audio/wav"></audio>
+		<audio id="tv"><source src="../assets/audio/tv.wav" type="audio/wav"></audio>
+		<audio id="walkie"><source src="../assets/audio/walkie.wav" type="audio/wav"></audio>		
+			<p class="centered" style="font-family: Kremlin; font-size: 18pt; margin-top: -150px;">GLOBAL GAME JAM 2018</p>
 		<div id="holder" class="starting-canvas" style="height:  250px; width: 290px; cursor: pointer;">
 			<canvas id="GameCanvas" width="200" height="300"></canvas>
 			<p style="font-family: Kremlin; text-align:center; font-size: 36pt; position: relative; top: -250px; pointer-events:none;" id="preloader"><i class="fa fa-cog fa-spin fa-fw"></i></p>
@@ -52,13 +61,26 @@
 			var canvas = document.getElementById("GameCanvas");
 			var graphics = canvas.getContext("2d");
 
-			
+			//Store all the music initially
+			var hatTheme = document.getElementById("hatTheme");
+			var mainTheme = document.getElementById("mainTheme");
+			var cutscene = document.getElementById("cutscene");
+			var menu = document.getElementById("menu");
+
+			var tv = document.getElementById("tv");
+			var walkie = document.getElementById("walkie");
+
+			hatTheme.loop = true;
+			mainTheme.loop = true;
+			cutscene.loop = true;
+			menu.loop = true;
 
 			//Store all images used in the game
 			var loadedCount = 0;
 			var images = new Array();
-			var imageCount = 16;
+			var imageCount = 21;
 			var checkLoadHandler;
+			var inCutscene = false;
 			function preload() {
 				for (i = 0; i < preload.arguments.length; i++) {
 					images[i] = new Image();
@@ -81,16 +103,20 @@
 							"../assets/sit.png",
 							"../assets/crouch.png",
 							"../assets/clinging.png",
+							"../assets/spin.png",
 							"../assets/hat.png",
 							"../assets/key.png",
 							"../assets/door.png",
-							"../assets/switch.png");
+							"../assets/switch.png",
+							"../assets/menu.png",
+							"../assets/font open.png",
+							"../assets/general.png",
+							"../assets/pedestrian.png");
 
 			
 
 			function checkIfLoaded()
 			{
-				console.log(loadedCount);
 				if(loadedCount == imageCount)
 				{
 					document.getElementById("preloader").innerHTML = "CommencE";
@@ -107,12 +133,9 @@
 			
 			
 
-			var defaultFloor = 1087; 
+			 
 
 			var dialogue = new DialogueBox(screenWH/2, screenHH * 1.5);
-			dialogue.addLine("Greetings, Komrade. It is time you",
-							 "learn to truly serve your country.", 
-							 "Guard this transmission well.", 0);
 
 			var loop; //Holds the game loop
 
@@ -128,28 +151,33 @@
 			var initBlockTotal = 0;
 
 			var arrow = new Indicator(-50, -50);
-			var map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],						
-			[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,[0],0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0]];
+			var map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,["k",2,5],0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+						[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,2,0,0,0,0,0,0,2,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1],
+						[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,2,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,["s", false, 0,1,3,4],0,0,1,0,0,0,["p",200],0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,2,0,0,0,0,1]];
 
-
+			var defaultFloor = map.length * 75 - 37.5;
 
 			//A list containing all the bears currently within the player's control
 			var bears = [];
 			var blocks = [];
 			var keys = [];
+			var switches = [];
+			var pedestrians = [];
 
 			//The index in bears[] of the bear the player is currently controlling
 			var active = 0;
@@ -197,28 +225,61 @@
 			}
 			var animCount = 0;
 			var animLength = 30;
-			var animOffset = 1920;
-			var animHeight = 1080;
+			var animOffset = 480;
+			var animHeight = 270;
 			
 			var tvHandler;
+			var menuHandler;
+			var cutsceneHandler;
+
 
 			function loadMainMenu()
 			{
+				tv.play();
 				tvHandler = setInterval(animateTV, 100);
 			}
 
 			function animateTV(){
-				graphics.drawImage(images[0], animOffset * animCount, 0, animOffset, animHeight, 0, 0, animOffset, animHeight);
+				graphics.drawImage(images[0], animOffset * animCount, 0, animOffset, animHeight, 0, 0, screenWH*2, screenHH*2);
 				animCount++;
 
 				if(animCount == animLength)
 				{
 					animCount = 0;
-					animLength = 3;
+					animLength = 19;
+					
 					clearInterval(tvHandler);
-					livingRoom();
-					livingRoomHandler = setInterval(livingRoom, 300);
+					menu.play();
+					menuDraw();
+					menuHandler = setInterval(menuDraw, 160);
+					canvas.addEventListener("mousedown", menuInput);
 				}
+			}
+
+			var menuFont = images[18];
+			var menuFontOffset = 245;
+			var menuFontCount = 0;
+			var menuFontLength = 56;
+			var menuFontHeight = 100;
+
+			var startButton = new MenuButton(100, 200, "StarT Game");
+			var exitButton = new MenuButton(100, 400, "Exit Game");
+
+			function menuDraw(){
+				graphics.drawImage(images[17], animOffset * animCount, 0, animOffset, animHeight, 0, 0, screenWH*2, screenHH*2);
+				graphics.drawImage(menuFont, menuFontOffset * menuFontCount, 0, menuFontOffset, menuFontHeight, screenWH - menuFontOffset*2, screenHH - menuFontHeight*4 + 100, menuFontOffset*4, menuFontHeight*4);
+				
+				startButton.draw();
+				exitButton.draw();
+
+				animCount++;
+				menuFontCount++;
+
+				if(menuFontCount == menuFontLength)
+					menuFontCount = 0;
+
+				if(animCount == animLength)
+					animCount = 0;
 			}
 
 			var roomBackground = images[1]
@@ -252,60 +313,59 @@
 			var transmitterOffset = 244;
 			var transmitterHeight = 205;
 
-			var StartButton = 
+
+
+			function MenuButton(x,y, text)
 			{
-				x: 100,
-				y: 200,
-				text: "Start Game",
-				selected: false,
-				draw: function(){
+				this.x = x;
+				this.y = y;
+				this.text = text;
+				this.draw = function(){
 					graphics.fillStyle = "#131313";
 					graphics.fillRect(this.x, this.y, 300, 100);
 					graphics.font = "30pt TitleFont";
 					graphics.shadowOffsetY = 5;
 					graphics.shadowColor = "#151712";
 					graphics.fillStyle = "#849254";
-					graphics.fillText(text, x + 25, y + 70);
+					graphics.fillText(this.text, this.x + 25, this.y + 65);
 					graphics.shadowOffsetY = 0;
 				}
-			};
 
-			StartButton.addEventListener("click", startGame);
-
-			StartButton.selected = true;
-
-			function livingRoom() {
-				graphics.drawImage(roomBackground, animOffset * animCount, 0, animOffset, animHeight, 0, 0, animOffset, animHeight);
-				animCount++;
-				graphics.drawImage(layingBear, layingBearOffset * layingBearCount, 0, layingBearOffset, layingBearHeight, 388-layingBearOffset/2, 884-layingBearHeight/2,layingBearOffset, layingBearHeight);
-				graphics.drawImage(pipeBear, pipeBearOffset * pipeBearCount, 0, pipeBearOffset, pipeBearHeight, 1588-pipeBearOffset/2, 676-pipeBearHeight/2, pipeBearOffset, pipeBearHeight);
-				layingBearCount++;
-				pipeBearCount++;
-				graphics.drawImage(paperBear, 804-paperBearWidth/2, 572-paperBearHeight/2, paperBearWidth, paperBearHeight);
-
-				graphics.drawImage(transmitter, transmitterOffset * transmitterCount, 0, transmitterOffset, transmitterHeight, 1048-transmitterOffset/2, 676-transmitterHeight/2, transmitterOffset, transmitterHeight);
-
-				StartButton.draw();
-
-				if(transmitting)
-					transmitterCount++;
-
-				if(layingBearCount == layingBearLength)
-					layingBearCount = 0;
-				if(pipeBearCount == pipeBearLength)
-					pipeBearCount = 0;
-				if(animCount == animLength)
-					animCount = 0;
-				if(transmitterCount == transmitterLength)
-					transmitterCount = 0;
 			}
 
-			var intervalCount = 0;
-			//Set initial values when booting the game
-			function startGame()
-			{
-				canvas.style.cursor = "none";
+			
 
+			function menuInput(e)
+			{
+				if(e.clientX > startButton.x && e.clientX < startButton.x + 300 && e.clientY > startButton.y && e.clientY < startButton.y + 100)
+				{
+					clearInterval(menuHandler);
+					openingCutscene();
+					menu.pause();
+					tv.pause();
+				}
+				if(e.clientX > exitButton.x && e.clientX < exitButton.x + 300 && e.clientY > exitButton.y && e.clientY < exitButton.y + 100)
+				{
+					clearInterval(menuHandler);
+					endfullscreen();
+					menu.pause();
+				}
+			}
+
+			function livingRoom() {
+				drawLivingRoom(0);
+			}
+
+			function openingCutscene()
+			{
+				clearInterval(menuHandler);
+				cutscene.play();
+				animLength = 3;
+				animCount = 0;
+				animOffset = 1920;
+				animHeight = 1080;
+				canvas.style.cursor = "none";
+				inCutscene = true;
 				//Set up controller input
 				if(canGame())
 				{
@@ -330,7 +390,94 @@
 		            }, 500);
 		        }
 
+		        cutsceneHandler = setInterval(cutsceneDrawing, 16);
+		        setTimeout(function(){
+		        	walkie.play();
+		        	transmitting = true;
+		        	dialogue.addLine("Gentlemen, I have urgent news",
+		        					"from our base of operations in",
+		        					"Moscow, requiring immediate action.", 0);
+		        	dialogue.addLine("We've been informed of an attempted",
+		        					"attack on your shelter, and we",
+		        					"recommend you relocate immediately.", 0);
+		        	dialogue.addLine("Be sure not to reveal your identity",
+		        					"as you leave town, and remember to",
+		        					"stick together.", 0);
+		        	dialogue.addLine("I'm sure you'll find that the",
+		        					"three of you together can ",
+		        					"accomplish much more than alone.", 0);
+		        	dialogue.addLine("Best of luck, gentlemen, we hope",
+		        					"to see you on the other side.",
+		        					"", 0);
+		        }, 5000);
+			}
 
+			var ending = false;
+			function cutsceneDrawing()
+			{
+				drawLivingRoom(1);
+				dialogue.update();
+				dialogue.draw();
+				if(dialogue.done && !ending){
+					ending = true;
+					inCutscene = false;
+					setTimeout(function(){
+						clearInterval(cutsceneHandler);
+						cutscene.pause();
+						mainTheme.play();
+						walkie.pause();
+						startGame();
+					}, 1000);
+				}
+			}
+
+
+			var roomAnimTimer = 10;
+			function drawLivingRoom(delay)
+			{
+				graphics.drawImage(roomBackground, animOffset * animCount, 0, animOffset, animHeight, 0, 0, animOffset, animHeight);
+				graphics.drawImage(layingBear, layingBearOffset * layingBearCount, 0, layingBearOffset, layingBearHeight, 388-layingBearOffset/2, 884-layingBearHeight/2,layingBearOffset, layingBearHeight);
+				graphics.drawImage(pipeBear, pipeBearOffset * pipeBearCount, 0, pipeBearOffset, pipeBearHeight, 1588-pipeBearOffset/2, 676-pipeBearHeight/2, pipeBearOffset, pipeBearHeight);
+				
+				graphics.drawImage(paperBear, 804-paperBearWidth/2, 572-paperBearHeight/2, paperBearWidth, paperBearHeight);
+
+				graphics.drawImage(transmitter, transmitterOffset * transmitterCount, 0, transmitterOffset, transmitterHeight, 1048-transmitterOffset/2, 676-transmitterHeight/2, transmitterOffset, transmitterHeight);
+
+				if(delay == 0)
+				{
+					layingBearCount++;
+					pipeBearCount++;
+					animCount++;
+					if(transmitting)
+						transmitterCount++;
+				}else{
+					roomAnimTimer--;
+					if(roomAnimTimer == 0){
+						roomAnimTimer = 10;
+						layingBearCount++;
+					pipeBearCount++;
+					animCount++;
+					if(transmitting)
+						transmitterCount++;
+					}
+				}
+				
+
+				if(layingBearCount == layingBearLength)
+					layingBearCount = 0;
+				if(pipeBearCount == pipeBearLength)
+					pipeBearCount = 0;
+				if(animCount == animLength)
+					animCount = 0;
+				if(transmitterCount == transmitterLength)
+					transmitterCount = 0;
+			}
+
+			var intervalCount = 0;
+			//Set initial values when booting the game
+			function startGame()
+			{
+				
 		        //Load the tile based map for the level
 		        for(var i = 0;i<map.length;i++)
 		        {
@@ -348,19 +495,32 @@
 		        		}
 		        		if(map[i][j] instanceof Array)
 		        		{
-		        			var k = new Key(j*75, i*75, map[i][j], keys.length);
-		        			keys.push(k);
+		        			if(map[i][j][0] == "k")
+		        			{
+			        			var k = new Key(j*75, i*75, map[i][j], keys.length);
+			        			keys.push(k);
+			        		}
+			        		if(map[i][j][0] == "s")
+		        			{
+			        			var s = new Switch(j*75, i*75, map[i][j][1], map[i][j], switches.length);
+			        			switches.push(s);
+			        		}
+			        		if(map[i][j][0] == "p")
+		        			{
+			        			var p = new Pedestrian(j*75, i*75, map[i][j][1]);
+			        			pedestrians.push(p);
+			        		}
 		        		}
 		        	}
 		        }
 
 		        initBlockTotal = blocks.length;
 		        //Add a temporary bear
-				bears.push(new Bear(25, 400, blocks.length));
+				bears.push(new Bear(225, defaultFloor - 75, blocks.length));
 
-				bears.push(new Bear(125, 400, blocks.length + 1));
+				bears.push(new Bear(325, defaultFloor - 75, blocks.length + 1));
 
-				bears.push(new Bear(225, 400, blocks.length + 2));
+				bears.push(new Bear(425, defaultFloor - 75, blocks.length + 2));
 
 		        //Start the game loop
 		        loop = setInterval(gameUpdate, 16);
@@ -372,108 +532,118 @@
 
 				if(hasGP)
 				{
+
 					var gamePad = navigator.getGamepads()[0];
 					var leftStickX = gamePad.axes[0];
 					var leftStickY = gamePad.axes[1];
 
 					var rightStickX = gamePad.axes[2];
 					var rightStickY = gamePad.axes[3];
-
-					var bear = bears[active];
-
-					//Hat Mechanic
-					if(!lTrigger && bear.onGround && gamePad.buttons[6].pressed && bear.stackCount == 0 && !bear.stacked && (bear.state == "idle" || bear.state == "walking"))
+					if(!inCutscene)
 					{
-						lTrigger = true;
-						bear.toHat();
-					}
+						var bear = bears[active];
 
-					if(lTrigger && !gamePad.buttons[6].pressed)
-					{
-						bear.toBear();
-						lTrigger = false;
-					}
-
-					if(Math.abs(leftStickX) > 0.2){
-						bear.move((leftStickX/Math.abs(leftStickX)) * 10);
-						if(bear.state != "crouching" && bear.state != "clinging")
+						//Hat Mechanic
+						if(!lTrigger && bear.onGround && gamePad.buttons[6].pressed && bear.stackCount == 0 && !bear.stacked && (bear.state == "idle" || bear.state == "walking"))
 						{
-							if(bear.onGround)
-								bear.state = "walking";
-							else
-								bear.state = "idle";
+							lTrigger = true;
+							bear.toHat();
 						}
-					}else if (bear.state == "walking"){
-						bear.state = "idle";
-					}
-					if(gamePad.buttons[0].pressed && !aPressed){
-						bear.jump();
-						aPressed = true;
-					}else if(!gamePad.buttons[0].pressed){
-						aPressed = false;
-					}
 
-					//Stop clinging
-					if(leftStickY > 0.9 && bear.state == "clinging")
-					{
-						bear.state = "idle";
-						bear.y += 5;
-						bear.floor = defaultFloor;
-					}
-					
-
-					//Crouching
-					if(gamePad.buttons[2].pressed && !xPressed){
-						if(bear.state == "crouching"){
-							bear.uncrouch();
+						if(lTrigger && !gamePad.buttons[6].pressed)
+						{
+							bear.toBear();
+							lTrigger = false;
 						}
-						else{
-							bear.crouch(leftStickX);
-						}
-						xPressed = true;
-					}else if(!gamePad.buttons[2].pressed){
-						xPressed = false;
-					}
 
-					var closestInd = -1;
-					if(bears[active].onGround && bears[active].state != "clinging" && !bears[active].isHat)
-					{
-						if(Math.abs(rightStickX) > 0.9 && !rightStickXMoved && Math.abs(rightStickY) < 0.9){
-							rightStickXMoved = true;
-							
-							var closestCandidates = findClosestX(rightStickX, bears, bears[active]);
-
-							if(closestCandidates.length == 1){
-								active = closestCandidates[0];
-							}else{
-								var newClosestCandidates = [];
-								for (var j = 0;j<closestCandidates.length;j++)
-									newClosestCandidates.push(bears[closestCandidates[j]]);
-								var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
-								if(nextClosestCandidates.length >= 1)
-									active = nextClosestCandidates[0];
+						if(Math.abs(leftStickX) > 0.2){
+							bear.move((leftStickX/Math.abs(leftStickX)) * 10);
+							if(bear.state != "crouching" && bear.state != "clinging")
+							{
+								if(bear.onGround)
+									bear.state = "walking";
+								else
+									bear.state = "idle";
 							}
+						}else if (bear.state == "walking"){
+							bear.state = "idle";
+						}
+						if(gamePad.buttons[0].pressed && !aPressed){
+							bear.jump();
+							aPressed = true;
+						}else if(!gamePad.buttons[0].pressed){
+							aPressed = false;
+						}
 
-						}else if(Math.abs(rightStickX) < 0.9 && rightStickXMoved) {
-							rightStickXMoved = false;
-						}else if(Math.abs(rightStickY) > 0.9 && !rightStickYMoved  && Math.abs(rightStickX) < 0.9){
-							rightStickYMoved = true;
-							
-							var closestCandidates = findClosestY(rightStickY, bears, bears[active]);
+						//Stop clinging
+						if(leftStickY > 0.9 && bear.state == "clinging")
+						{
+							bear.state = "idle";
+							bear.y += 5;
+							bear.floor = defaultFloor;
+						}
+						
 
-							if(closestCandidates.length == 1){
-								active = closestCandidates[0];
-							}else{
-								var newClosestCandidates = [];
-								for (var j = 0;j<closestCandidates.length;j++)
-									newClosestCandidates.push(bears[closestCandidates[j]]);
-								var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
-								if(nextClosestCandidates.length >= 1)
-									active = nextClosestCandidates[0];
+						//Crouching
+						if(gamePad.buttons[2].pressed && !xPressed){
+							if(bear.state == "crouching"){
+								bear.uncrouch();
 							}
+							else{
+								bear.crouch(leftStickX);
+							}
+							xPressed = true;
+						}else if(!gamePad.buttons[2].pressed){
+							xPressed = false;
+						}
 
-						}else if(Math.abs(rightStickY) < 0.9 && rightStickYMoved) {
-							rightStickYMoved = false;
+						var closestInd = -1;
+						if(bears[active].onGround && bears[active].state != "clinging" && !bears[active].isHat)
+						{
+							if(Math.abs(rightStickX) > 0.9 && !rightStickXMoved && Math.abs(rightStickY) < 0.9){
+								rightStickXMoved = true;
+								
+								var closestCandidates = findClosestX(rightStickX, bears, bears[active]);
+
+								if(closestCandidates.length == 1){
+									active = closestCandidates[0];
+								}else{
+									var newClosestCandidates = [];
+									for (var j = 0;j<closestCandidates.length;j++)
+										newClosestCandidates.push(bears[closestCandidates[j]]);
+									var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
+									if(nextClosestCandidates.length >= 1)
+										active = nextClosestCandidates[0];
+								}
+
+							}else if(Math.abs(rightStickX) < 0.9 && rightStickXMoved) {
+								rightStickXMoved = false;
+							}else if(Math.abs(rightStickY) > 0.9 && !rightStickYMoved  && Math.abs(rightStickX) < 0.9){
+								rightStickYMoved = true;
+								
+								var closestCandidates = findClosestY(rightStickY, bears, bears[active]);
+
+								if(closestCandidates.length == 1){
+									active = closestCandidates[0];
+								}else{
+									var newClosestCandidates = [];
+									for (var j = 0;j<closestCandidates.length;j++)
+										newClosestCandidates.push(bears[closestCandidates[j]]);
+									var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
+									if(nextClosestCandidates.length >= 1)
+										active = nextClosestCandidates[0];
+								}
+
+							}else if(Math.abs(rightStickY) < 0.9 && rightStickYMoved) {
+								rightStickYMoved = false;
+							}
+						}
+					}else{
+						if(gamePad.buttons[0].pressed && !aPressed){
+							dialogue.advance();
+							aPressed = true;
+						}else if(!gamePad.buttons[0].pressed){
+							aPressed = false;
 						}
 					}
 				}
@@ -562,6 +732,7 @@
 		    }
 
 		    function gameUpdate() {
+
 		    	camera.x+=Math.ceil((bears[active].x-camera.x)/8);
 		    	camera.y+=Math.ceil(((bears[active].y - bears[active].height * bears[active].stackCount/2)-camera.y)/8);
 
@@ -582,6 +753,12 @@
 
 		    	for(var k = 0;k<keys.length; k++)
 		    		keys[k].update();
+
+		    	for(var s = 0;s<switches.length; s++)
+		    		switches[s].update();
+
+		    	for(var p = 0;p<pedestrians.length; p++)
+		    		pedestrians[p].update();
 
 		    	var max = maxCamDistance(bears);
 		    	if(max[0] > screenWH)
@@ -610,6 +787,10 @@
 
 		    	for(i = 0; i<keys.length;i++)
 		    		keys[i].draw();
+		    	for(i = 0; i<switches.length;i++)
+		    		switches[i].draw();
+		    	for(var h = 0; h<pedestrians.length;h++)
+		    		pedestrians[h].draw();
 		    }
 
 
@@ -631,7 +812,10 @@
 				this.draw = function(){
 					graphics.save();
 					graphics.scale(camera.scale, camera.scale);
+					graphics.shadowBlur = 10;
+					graphics.shadowColor = "black";
 					graphics.drawImage(this.pic, this.x - 25 - camera.x + screenWH * 1/camera.scale, this.y + arrDiff - 25 - camera.y  + screenHH * 1/camera.scale, 50, 50);
+					graphics.shadowBlur = 0;
 					graphics.restore();
 				}
 

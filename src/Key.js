@@ -3,6 +3,7 @@ function Key(x,y,doors, ind)
 	this.x = x;
 	this.y = y;
 	this.doors = doors;
+	this.doors.shift();
 	this.index = ind;
 
 	this.pic = new Image();
@@ -16,7 +17,10 @@ function Key(x,y,doors, ind)
 		graphics.save();
 		graphics.scale(camera.scale, camera.scale);
 		graphics.translate(this.x-this.width/2-camera.x+screenWH* 1/camera.scale,this.y-this.height/2-camera.y+screenHH* 1/camera.scale);
+		graphics.shadowBlur = 10;
+		graphics.shadowColor = "black";
 		graphics.drawImage(this.pic,0,0, this.width, this.height);
+		graphics.shadowBlur = 0;
 		graphics.restore();
 	}
 

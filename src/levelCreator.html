@@ -1,0 +1,249 @@
+<html>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+<style>
+body
+{
+	padding:0px;
+	margin:0px;
+	overflow:hidden;
+}
+canvas{
+	position: absolute;
+}
+</style>
+<body>
+
+<script>
+var canvas = document.createElement("CANVAS");
+var ctx = canvas.getContext('2d');
+var camera = {x:0,y:0};
+var bx = 0;
+var by = 0;
+var fillObject = 1;
+var rTimer = 1;
+var tTimer = 1;
+
+var imageNames = ["../assets/tiles/0.png",
+              "../assets/door.png",
+              "../assets/key.png",
+              "../assets/switch.png"];
+
+var images = [];
+
+for(var i = 0; i <imageNames.length;i++)
+{
+  var img = new Image();
+  img.src = imageNames[i];
+  images.push(img);
+}
+
+var levelArr = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
+window.addEventListener('resize',function(){
+  var width  = document.body.offsetWidth;
+  var height = document.body.offsetHeight;
+  ctx.canvas.width  = width;
+  ctx.canvas.height = height;
+  ctx.translate(width/2,height/2);
+},false);
+canvas.style.padding = "0px";
+document.body.appendChild(canvas);
+ctx.canvas.width  = document.body.offsetWidth;
+ctx.canvas.height = document.body.offsetHeight;
+var bg = new Image();
+var img = new Image();
+bg.src = "../assets/bg.png";
+setInterval(function(){
+  if(by*60+24+camera.y<0)
+    camera.y+=60;
+  if(by*60+24+camera.y>1000)
+    camera.y-=60;
+  if(bx*60+30+camera.x>1860)
+    camera.x-=60;
+  if(bx*60+30+camera.x<30)
+    camera.x+=60;
+  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  ctx.drawImage(bg,0,0);
+  
+  for(var i = 0;i<levelArr.length;i++)
+  {
+    for(var s = 0;s<levelArr[0].length;s++)
+    {
+      if(levelArr[i][s] != 0)
+        ctx.drawImage(images[levelArr[i][s] - 1],s*60+30+camera.x,i*60+24+camera.y,60,60);
+    }
+  }
+  if(fillObject == 0)
+  {
+    ctx.beginPath();
+    ctx.moveTo(bx*60+30+camera.x,by*60+24+camera.y);
+    ctx.lineTo(bx*60+90+camera.x,by*60+84+camera.y);
+    ctx.moveTo(bx*60+30+camera.x,by*60+84+camera.y);
+    ctx.lineTo(bx*60+90+camera.x,by*60+24+camera.y);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+    ctx.drawImage(images[fillObject-1],bx*60+30+camera.x,by*60+24+camera.y,60,60);
+  
+},16);
+var window_focus = true;
+$(window).focus(function() {
+    window_focus = true;
+})
+    .blur(function() {
+        window_focus = false;
+    });
+function canGame() {
+        return "getGamepads" in navigator;
+    }
+    var hasGP = false;
+$(document).ready(function() {
+      if(canGame()) {
+ 
+            $(window).on("gamepadconnected", function() {
+                hasGP = true;
+                setInterval(gpInput,25);
+            });
+ 
+            $(window).on("gamepaddisconnected", function() {
+                hasGP = false;
+                clearInterval(gpInput);
+            });
+ 
+            //setup an interval for Chrome
+            var checkGP = window.setInterval(function() {
+                if(navigator.getGamepads()[0]) {
+                    if(!hasGP) $(window).trigger("gamepadconnected");
+                    window.clearInterval(checkGP);
+                }
+            }, 500);
+      var fired = false;
+      var rBumper = false;
+      var lBumper = false;
+      function gpInput()
+      {
+        if(window_focus)
+        {
+        var gp = navigator.getGamepads()[0];
+        var leftStickX = gp.axes[0];
+        var leftStickY = gp.axes[1];
+        if(Math.abs(leftStickX)>0.5)
+        {
+          rTimer--;
+          if(rTimer==0)
+          {
+            bx+=Math.round(leftStickX);
+            if(bx<0)
+              bx=0;
+            rTimer = 6;
+          }
+        }else{
+          rTimer = 1;
+        }
+        if(!rBumper&&gp.buttons[5].pressed)
+        {
+          rBumper = true;
+          fillObject++;
+        }else if(rBumper&&!gp.buttons[5].pressed)
+          rBumper = false;
+        if(!lBumper&&gp.buttons[4].pressed)
+        {
+          lBumper = true;
+          fillObject--;
+        }else if(lBumper&&!gp.buttons[4].pressed)
+          lBumper = false;
+        if(Math.abs(leftStickY)>0.5)
+        {
+          tTimer--;
+          if(tTimer==0)
+          {
+            by+=Math.round(leftStickY);
+            if(by>levelArr.length-1)
+              by=levelArr.length-1;
+            tTimer = 6;
+          }
+        }else{
+          tTimer = 1;
+        }
+        if(gp.buttons[0].pressed&&(by<0||bx>levelArr[0].length-1||levelArr[by][bx]==0||fillObject==0))
+        {
+          var numAdded = 0;
+          while(by<0)
+          {
+            var tempRow = [];
+            for(var i = 0;i<levelArr[0].length;i++)
+              tempRow.push(0);
+            levelArr.unshift(tempRow);
+            by++;
+            numAdded++;
+          }
+          while(bx>levelArr[0].length-1)
+          {
+            console.log("adding column");
+            for(var i = 0;i<levelArr.length;i++)
+              levelArr[i].push(0);
+          }
+          camera.y-=numAdded*60;
+          levelArr[by][bx] = fillObject;
+        }
+        if(gp.buttons[8].pressed)
+        {
+          camera = {x:0,y:0};
+          bx = 0;
+          by = levelArr.length-1;
+        }
+      }
+    }
+    }
+    });
+function func()
+{
+  var string = "[";
+  for(var i = 0;i<levelArr.length;i++)
+  {
+    string+="[";
+    for(var s = 0;s<levelArr[i].length;s++)
+    {
+      string+=levelArr[i][s];
+      if(!(s==levelArr[0].length-1))
+        string+=",";
+    }
+    string+="]";
+    if(i!=levelArr.length-1)
+      string+=",\n";
+    else
+      string+="]";
+  }
+  
+  document.getElementById("array").innerText = string;
+  copyToClipboard(document.getElementById("array"));
+}
+function copyToClipboard(element) {
+    var $temp = $("<input>");
+    $("body").append($temp);
+    $temp.val($(element).text()).select();
+    document.execCommand("copy");
+    $temp.remove();
+}
+</script>
+  <button onclick="func()" style="position:fixed; top: 30px; left: 30px;">
+    Save Array
+  </button>
+  <div id="array" hidden>
+  </div>
+</body>
+</html>

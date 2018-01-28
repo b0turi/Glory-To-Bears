@@ -6,7 +6,7 @@ function Block(x, y, xInd, yInd, ind, style)
 	this.yIndex = yInd;
 	this.index = ind;
 	this.pic = new Image();
-	this.pic.src = "../assets/tiles/"+style+".png";
+	this.pic.src = "../assets/tiles/"+Math.floor(Math.random()*4)+".png";
 	this.isDoor = false;
 
 	this.width = 75;
@@ -28,12 +28,13 @@ function Block(x, y, xInd, yInd, ind, style)
 	}
 	this.checkCollision = function(obj)
 	{
-		if(Math.abs(obj.x-this.x)<this.width/2+obj.width/2&&obj.y+obj.height/2<=this.y - this.height/2&&obj.floor>=this.y - this.height/2&&obj.onBlock!=this.index&&!obj.stacked)
-		{
-			obj.floor = this.y-this.height/2;
-			obj.onBlock = this.index;
-			return;
-		}
+
+			if(Math.abs(obj.x-this.x)<this.width/2+obj.width/2&&obj.y+obj.height/2<=this.y - this.height/2 + 5&&obj.floor>=this.y - this.height/2&&obj.onBlock!=this.index&&!obj.stacked)
+			{
+				obj.floor = this.y-this.height/2;
+				obj.onBlock = this.index;
+				return;
+			}
 		
 		if(Math.abs(obj.x-this.x)>=this.width/2+obj.width/2&&obj.onBlock==this.index && !obj.stacked)
 		{
@@ -45,8 +46,7 @@ function Block(x, y, xInd, yInd, ind, style)
 
 		if(Math.abs(obj.x-this.x)<this.width/2 + obj.width/2 - 10&& obj.y > this.y && obj.y - obj.height/2 < this.y + this.height/2 && !obj.onGround && !obj.stacked)
 		{
-			obj.y = this.y + this.height/2 +obj.height/2 + 1;
-			obj.grav = 0;
+			pushStackY(this.y + this.height/2 +obj.height/2 + 1, obj);
 		}
 
 		if(obj.x < this.x && obj.x + obj.width/2 > this.x-this.width/2 && Math.abs(obj.y-this.y) < obj.height/2 + this.height/2 - 5)
