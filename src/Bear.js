@@ -87,7 +87,7 @@ function Bear(x, y, i)
 
 	this.update = function()
 	{
-		if(this.state == "walking" && active + blocks.length != this.index)
+		if(this.state == "walking" && active + initBlockTotal != this.index)
 			this.state = "idle";
 		this.animTimer--;
 			if(this.animTimer == 0)
@@ -141,7 +141,7 @@ function Bear(x, y, i)
 				}else{
 					findStackTop(this).grav = gravVal;
 					findStackTop(this).y--;
-					active = findStackTop(this).index - blocks.length;
+					active = findStackTop(this).index - initBlockTotal;
 					findStackTop(this).unstack();
 				}
 			}else{
@@ -205,7 +205,6 @@ function Bear(x, y, i)
 			if(bears[i].onBlock == this.index)
 				return;
 		}
-		console.log("uncrouch");
 		this.state = "idle";
 		this.width = 75;
 		this.height = 150;
@@ -234,9 +233,9 @@ function Bear(x, y, i)
 			obj.stackParent = this;
 			obj.dir = this.dir;
 			if(this.stacked)
-				active = findStackRoot(this).index - blocks.length;
+				active = findStackRoot(this).index - initBlockTotal;
 			else
-				active = this.index - blocks.length;
+				active = this.index - initBlockTotal;
 
 			for(i = 0; i<=obj.stackCount; i++)
 				addStackCounts(this);

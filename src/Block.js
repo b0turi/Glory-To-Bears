@@ -7,6 +7,7 @@ function Block(x, y, xInd, yInd, ind, style)
 	this.index = ind;
 	this.pic = new Image();
 	this.pic.src = "../assets/tiles/"+style+".png";
+	this.isDoor = false;
 
 	this.width = 75;
 	this.height = 75;
@@ -31,11 +32,10 @@ function Block(x, y, xInd, yInd, ind, style)
 		{
 			obj.floor = this.y-this.height/2;
 			obj.onBlock = this.index;
-			console.log(obj.onBlock);
 			return;
 		}
 		
-		if(Math.abs(obj.x-this.x)>=this.width/2+obj.width/2&&obj.onBlock==ind && !obj.stacked)
+		if(Math.abs(obj.x-this.x)>=this.width/2+obj.width/2&&obj.onBlock==this.index && !obj.stacked)
 		{
 			var floorDiff = defaultFloor - obj.floor;
 			setStackFloor(floorDiff, obj);

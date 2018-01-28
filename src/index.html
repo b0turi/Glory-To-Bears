@@ -3,12 +3,26 @@
 	<script type="text/javascript" src="Bear.js"></script>
 	<script type="text/javascript" src="Block.js"></script>
 	<script type="text/javascript" src="DialogueBox.js"></script>
+	<script type="text/javascript" src="Door.js"></script>
+	<script type="text/javascript" src="Key.js"></script>
+	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
 	<head>
 		<style>
 		.starting-canvas {
 			border: 4px solid black;
 			margin: 0;
 		    position: absolute;
+		    top: 50%;
+		    left: 50%;
+		    transform: translate(-50%, -50%);
+		}
+
+		.starting-canvas:hover {
+			background-color: #550000;
+		}
+
+		.centered {
+			position: absolute;
 		    top: 50%;
 		    left: 50%;
 		    transform: translate(-50%, -50%);
@@ -20,20 +34,77 @@
 		  	font-family: "TitleFont";
 		  	src: url("../assets/russia.ttf");
 		  }
+
+		  @font-face{
+		  	font-family: "Kremlin";
+		  	src: local('Kremlin'), url("../assets/kremlin.ttf");
+		  }
 		</style>
 	</head>
 	<body>
-		<div class="starting-canvas">
-			<canvas id="GameCanvas" width="200" height="100"></canvas>
+		<p class="centered" style="font-family: Kremlin; font-size: 18pt; margin-top: -150px;">GLOBAL GAME JAM 2018</p>
+		<div id="holder" class="starting-canvas" style="height:  250px; width: 290px; cursor: pointer;">
+			<canvas id="GameCanvas" width="200" height="300"></canvas>
+			<p style="font-family: Kremlin; text-align:center; font-size: 36pt; position: relative; top: -250px; pointer-events:none;" id="preloader"><i class="fa fa-cog fa-spin fa-fw"></i></p>
 		</div>
+		<p class="centered" style="text-align: center; font-family: Kremlin; font-size: 18pt; margin-top: 205px;">KYLE THOMPSON <br/> JILL CEFALO <br/> KEVIN THOMPSON <br/> <br/> <i style="font-family:serif;" class="fas fa-gamepad"></i> &nbsp; GAMEPAD REQUIRED</p>
 		<script>
 			var canvas = document.getElementById("GameCanvas");
 			var graphics = canvas.getContext("2d");
+
+			
+
+			//Store all images used in the game
+			var loadedCount = 0;
+			var images = new Array();
+			var imageCount = 16;
+			var checkLoadHandler;
+			function preload() {
+				for (i = 0; i < preload.arguments.length; i++) {
+					images[i] = new Image();
+					images[i].src = preload.arguments[i];
+					images[i].onload = function() {
+						loadedCount++;
+					}
+				}
+				checkLoadHandler = setInterval(checkIfLoaded, 100);
+			}
+			preload("../assets/opening.png",
+							"../assets/room.png",
+							"../assets/opening bear 1.png",
+							"../assets/opening bear 2.png",
+							"../assets/opening bear 3.png",
+							"../assets/transmitter.png",
+							"../assets/background.png",
+							"../assets/arrow.png",
+							"../assets/bear.png",
+							"../assets/sit.png",
+							"../assets/crouch.png",
+							"../assets/clinging.png",
+							"../assets/hat.png",
+							"../assets/key.png",
+							"../assets/door.png",
+							"../assets/switch.png");
+
+			
+
+			function checkIfLoaded()
+			{
+				console.log(loadedCount);
+				if(loadedCount == imageCount)
+				{
+					document.getElementById("preloader").innerHTML = "CommencE";
+					canvas.addEventListener("click",fullscreen);
+					clearInterval(checkLoadHandler);
+				}
+			}
+			
 
 
 			var screenWH = screen.width/2;
 			var screenHH = screen.height/2;
 			var camera = {x: screenWH, y:screenHH, scale: 0.5};
+			
 			
 
 			var defaultFloor = 1087; 
@@ -54,6 +125,7 @@
 
 			var arrDiff = 0;
 			var arrDir = 1;
+			var initBlockTotal = 0;
 
 			var arrow = new Indicator(-50, -50);
 			var map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -67,9 +139,9 @@
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],						
+			[0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],						
 			[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,[0],0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
 			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0]];
 
 
@@ -77,8 +149,7 @@
 			//A list containing all the bears currently within the player's control
 			var bears = [];
 			var blocks = [];
-
-			
+			var keys = [];
 
 			//The index in bears[] of the bear the player is currently controlling
 			var active = 0;
@@ -86,7 +157,9 @@
 			//Send the game into fullscreen and start the game
 			function fullscreen(){
 				var canvas = document.getElementById("GameCanvas");
-
+				document.getElementById("holder").style.cursor = "default";
+				graphics.fillStyle = "black";
+				graphics.fillRect(0,0,screen.width, screen.height);
 				//Use whatever fullscreen method the current browser uses
 			    if(canvas.webkitRequestFullScreen) {
 			        canvas.webkitRequestFullScreen();
@@ -99,9 +172,10 @@
 				canvas.height = screen.height;
 
 
+
 				canvas.removeEventListener("click", fullscreen);
 
-				startGame();
+				loadMainMenu();
 			}
 
 			//End the fullscreen and restore the original canvas size
@@ -121,12 +195,117 @@
 
 				canvas.addEventListener("click", fullscreen);
 			}
+			var animCount = 0;
+			var animLength = 30;
+			var animOffset = 1920;
+			var animHeight = 1080;
+			
+			var tvHandler;
 
+			function loadMainMenu()
+			{
+				tvHandler = setInterval(animateTV, 100);
+			}
+
+			function animateTV(){
+				graphics.drawImage(images[0], animOffset * animCount, 0, animOffset, animHeight, 0, 0, animOffset, animHeight);
+				animCount++;
+
+				if(animCount == animLength)
+				{
+					animCount = 0;
+					animLength = 3;
+					clearInterval(tvHandler);
+					livingRoom();
+					livingRoomHandler = setInterval(livingRoom, 300);
+				}
+			}
+
+			var roomBackground = images[1]
+
+			var livingRoomHandler;
+
+			var layingBear = images[2];
+
+			var layingBearLength = 2;
+			var layingBearCount = 0;
+			var layingBearOffset = 626;
+			var layingBearHeight = 265;
+
+			var paperBear = images[3];
+
+			var paperBearWidth = 330;
+			var paperBearHeight = 552;
+
+			var pipeBear = images[4];
+
+			var pipeBearLength = 4;
+			var pipeBearCount = 0;
+			var pipeBearOffset = 399;
+			var pipeBearHeight = 596;
+
+			var transmitter = images[5];
+
+			var transmitterLength = 7;
+			var transmitterCount = 0;
+			var transmitting = false;
+			var transmitterOffset = 244;
+			var transmitterHeight = 205;
+
+			var StartButton = 
+			{
+				x: 100,
+				y: 200,
+				text: "Start Game",
+				selected: false,
+				draw: function(){
+					graphics.fillStyle = "#131313";
+					graphics.fillRect(this.x, this.y, 300, 100);
+					graphics.font = "30pt TitleFont";
+					graphics.shadowOffsetY = 5;
+					graphics.shadowColor = "#151712";
+					graphics.fillStyle = "#849254";
+					graphics.fillText(text, x + 25, y + 70);
+					graphics.shadowOffsetY = 0;
+				}
+			};
+
+			StartButton.addEventListener("click", startGame);
+
+			StartButton.selected = true;
+
+			function livingRoom() {
+				graphics.drawImage(roomBackground, animOffset * animCount, 0, animOffset, animHeight, 0, 0, animOffset, animHeight);
+				animCount++;
+				graphics.drawImage(layingBear, layingBearOffset * layingBearCount, 0, layingBearOffset, layingBearHeight, 388-layingBearOffset/2, 884-layingBearHeight/2,layingBearOffset, layingBearHeight);
+				graphics.drawImage(pipeBear, pipeBearOffset * pipeBearCount, 0, pipeBearOffset, pipeBearHeight, 1588-pipeBearOffset/2, 676-pipeBearHeight/2, pipeBearOffset, pipeBearHeight);
+				layingBearCount++;
+				pipeBearCount++;
+				graphics.drawImage(paperBear, 804-paperBearWidth/2, 572-paperBearHeight/2, paperBearWidth, paperBearHeight);
+
+				graphics.drawImage(transmitter, transmitterOffset * transmitterCount, 0, transmitterOffset, transmitterHeight, 1048-transmitterOffset/2, 676-transmitterHeight/2, transmitterOffset, transmitterHeight);
+
+				StartButton.draw();
+
+				if(transmitting)
+					transmitterCount++;
+
+				if(layingBearCount == layingBearLength)
+					layingBearCount = 0;
+				if(pipeBearCount == pipeBearLength)
+					pipeBearCount = 0;
+				if(animCount == animLength)
+					animCount = 0;
+				if(transmitterCount == transmitterLength)
+					transmitterCount = 0;
+			}
 
 			var intervalCount = 0;
 			//Set initial values when booting the game
 			function startGame()
 			{
+				canvas.style.cursor = "none";
+
 				//Set up controller input
 				if(canGame())
 				{
@@ -157,14 +336,25 @@
 		        {
 		        	for (var j = 0;j<map[0].length;j++)
 		        	{
-		        		if(map[i][j] != 0)
+		        		if(map[i][j] == 1)
 		        		{
 		        			var b = new Block(j*75, i*75, j, i, blocks.length, map[i][j] - 1);
 		        			blocks.push(b);
 		        		}
+		        		if(map[i][j] == 2)
+		        		{
+		        			var d = new Door(j*75, i*75, j, i ,blocks.length);
+		        			blocks.push(d);
+		        		}
+		        		if(map[i][j] instanceof Array)
+		        		{
+		        			var k = new Key(j*75, i*75, map[i][j], keys.length);
+		        			keys.push(k);
+		        		}
 		        	}
 		        }
 
+		        initBlockTotal = blocks.length;
 		        //Add a temporary bear
 				bears.push(new Bear(25, 400, blocks.length));
 
@@ -372,13 +562,12 @@
 		    }
 
 		    function gameUpdate() {
-		    	camera.x+=Math.floor((bears[active].x-camera.x)/8);
-		    	camera.y+=Math.floor(((bears[active].y - bears[active].height * bears[active].stackCount/2)-camera.y)/15);
+		    	camera.x+=Math.ceil((bears[active].x-camera.x)/8);
+		    	camera.y+=Math.ceil(((bears[active].y - bears[active].height * bears[active].stackCount/2)-camera.y)/8);
 
-		    	for(var i = 0;i<bears.length; i++){
+		    	for(var i = 0;i<bears.length; i++)
 		    		bears[i].update();
 
-		    	}
 					for(var j = 0;j<bears.length;j++){
 		    			if(j != active)
 		    				bears[j].checkCollision(bears[active]);
@@ -391,6 +580,9 @@
 		    			blocks[b].checkCollision(bears[r]);
 		    	}
 
+		    	for(var k = 0;k<keys.length; k++)
+		    		keys[k].update();
+
 		    	var max = maxCamDistance(bears);
 		    	if(max[0] > screenWH)
 		    		camera.scale = screenWH/max[1];
@@ -402,8 +594,7 @@
 		    }
 
 
-		    var background = new Image();
-		    background.src = "../assets/background.png";
+		    var background = images[6];
 		    function gameDraw() {
 		    	graphics.drawImage(background, 0,0,canvas.width,canvas.height);
 		    	graphics.fillStyle = "#686868";
@@ -416,9 +607,11 @@
 		    		blocks[i].draw();
 		    	arrow.draw();
 		    	dialogue.draw();
+
+		    	for(i = 0; i<keys.length;i++)
+		    		keys[i].draw();
 		    }
 
-			canvas.addEventListener("click",fullscreen);
 
 			
 
@@ -428,8 +621,7 @@
 
 
 
-				this.pic = new Image();
-				this.pic.src = "../assets/arrow.png";
+				this.pic = images[7];
 
 				this.moveTo = function(newX,newY) {
 					this.x = newX;
