@@ -2,6 +2,7 @@
 	<script type="text/javascript" src="jquery-1.8.1.min.js"></script>
 	<script type="text/javascript" src="Bear.js"></script>
 	<script type="text/javascript" src="Block.js"></script>
+	<script type="text/javascript" src="DialogueBox.js"></script>
 	<head>
 		<style>
 		.starting-canvas {
@@ -37,6 +38,11 @@
 
 			var defaultFloor = 1087; 
 
+			var dialogue = new DialogueBox(screenWH/2, screenHH * 1.5);
+			dialogue.addLine("Greetings, Komrade. It is time you",
+							 "learn to truly serve your country.", 
+							 "Guard this transmission well.", 0);
+
 			var loop; //Holds the game loop
 
 			//Gamepad input trackers
@@ -46,22 +52,25 @@
 			var rightStickXMoved = false;
 			var rightStickYMoved = false;
 
+			var arrDiff = 0;
+			var arrDir = 1;
+
 			var arrow = new Indicator(-50, -50);
-			var map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],						
-			[0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
-			[0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0]];
+			var map = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],						
+			[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0],
+			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0]];
 
 
 
@@ -88,6 +97,7 @@
 			    //Reset the canvas size
 			    canvas.width  = screen.width;
 				canvas.height = screen.height;
+
 
 				canvas.removeEventListener("click", fullscreen);
 
@@ -236,7 +246,7 @@
 					}
 
 					var closestInd = -1;
-					if(bears[active].onGround && bears[active].state != "clinging" && bears[active].state != "hat")
+					if(bears[active].onGround && bears[active].state != "clinging" && !bears[active].isHat)
 					{
 						if(Math.abs(rightStickX) > 0.9 && !rightStickXMoved && Math.abs(rightStickY) < 0.9){
 							rightStickXMoved = true;
@@ -362,9 +372,8 @@
 		    }
 
 		    function gameUpdate() {
-		    	camera.x+=(bears[active].x-camera.x)/4;
-		    	camera.y+=((bears[active].y - bears[active].height * bears[active].stackCount/2)-camera.y)/15;
-				camOffset = {x: -camera.x + screen.width/2, y: -camera.y + screen.height/2};
+		    	camera.x+=Math.floor((bears[active].x-camera.x)/8);
+		    	camera.y+=Math.floor(((bears[active].y - bears[active].height * bears[active].stackCount/2)-camera.y)/15);
 
 		    	for(var i = 0;i<bears.length; i++){
 		    		bears[i].update();
@@ -388,26 +397,36 @@
 		    	else if(max[0] < 400 && (400)/max[1] < 1.5)
 		    		camera.scale = (400)/max[1];
 		    	arrow.update();
+		    	dialogue.update();
 		    	gameDraw();
 		    }
 
+
+		    var background = new Image();
+		    background.src = "../assets/background.png";
 		    function gameDraw() {
-		    	graphics.clearRect(0,0,canvas.width,canvas.height);
+		    	graphics.drawImage(background, 0,0,canvas.width,canvas.height);
+		    	graphics.fillStyle = "#686868";
 		    	graphics.font = '30px TitleFont';
-		    	graphics.fillText("Welcome to the Glory of the Soviet Union", 200, 200);
 		    	for(var i = 0;i<bears.length; i++){
-		    		bears[i].draw();
+		    		if(!bears[i].stacked)
+		    			bears[i].draw();
 		    	}
 		    	for(i = 0;i<blocks.length;i++)
 		    		blocks[i].draw();
 		    	arrow.draw();
+		    	dialogue.draw();
 		    }
 
 			canvas.addEventListener("click",fullscreen);
 
+			
+
 			function Indicator(x, y) {
 				this.x = x;
 				this.y = y;
+
+
 
 				this.pic = new Image();
 				this.pic.src = "../assets/arrow.png";
@@ -420,12 +439,20 @@
 				this.draw = function(){
 					graphics.save();
 					graphics.scale(camera.scale, camera.scale);
-					graphics.drawImage(this.pic, this.x - 25 - camera.x + screenWH * 1/camera.scale, this.y - 25 - camera.y + screenHH * 1/camera.scale, 50, 50);
+					graphics.drawImage(this.pic, this.x - 25 - camera.x + screenWH * 1/camera.scale, this.y + arrDiff - 25 - camera.y  + screenHH * 1/camera.scale, 50, 50);
 					graphics.restore();
 				}
 
 				this.update = function() {
-					this.moveTo(bears[active].x, bears[active].y  - bears[active].height/2 - bears[active].height * bears[active].stackCount - 35);
+
+					arrDiff += arrDir/3;
+					if(Math.abs(arrDiff) > 4)
+						arrDir *= -1;
+
+					this.moveTo(bears[active].x, bears[active].y + (arrDiff * arrDiff) - bears[active].height/2 - (bears[active].height/2) * bears[active].stackCount - 50);
+
+					if(bears[active].state == "clinging" && bears[active].grav == 0)
+						this.y -= 50;
 				}
 			}
 
