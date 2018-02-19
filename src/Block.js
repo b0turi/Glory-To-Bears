@@ -28,7 +28,6 @@ function Block(x, y, xInd, yInd, ind, style)
 	}
 	this.checkCollision = function(obj)
 	{
-
 			if(Math.abs(obj.x-this.x)<this.width/2+obj.width/2&&obj.y+obj.height/2<=this.y - this.height/2 + 5&&obj.floor>=this.y - this.height/2&&obj.onBlock!=this.index&&!obj.stacked)
 			{
 				obj.floor = this.y-this.height/2;

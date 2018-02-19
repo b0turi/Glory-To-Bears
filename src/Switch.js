@@ -50,7 +50,7 @@ function Switch(x,y,final, doors, ind)
 			this.standingIndex = obj.index;
 			this.stepping = true;
 			this.collect();
-		}else if(obj.index == this.standingIndex && (Math.abs(obj.x-this.x) > this.width/2 && Math.abs(obj.y-this.y) > this.height/2)){
+		}else if(obj.index == this.standingIndex && (Math.abs(obj.x-this.x) > this.width/2 || Math.abs(obj.y-this.y) > this.height/2)){
 			this.stepping = false;
 			this.standingIndex = -1;
 			this.stepOff();

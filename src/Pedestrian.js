@@ -46,12 +46,12 @@ function Pedestrian(x, y, distance)
 		if(this.dir == 1)
 		{
 			if(this.x < this.xInit + this.distance)
-				this.x += 5;
+				this.x += 2;
 			else
 				this.dir = -1;
 		}else{
 			if(this.x > this.xInit)
-				this.x -= 5;
+				this.x -= 2;
 			else
 				this.dir = 1;
 		}

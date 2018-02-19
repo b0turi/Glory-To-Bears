@@ -262,14 +262,16 @@ function Bear(x, y, i)
 		if(Math.abs(obj.x - this.x) < this.width/2 + obj.width/2 && this.state == "crouching" && obj.y - obj.height/2 < this.y + this.height/2 && obj.y > this.y && !obj.stacked && obj.state != "clinging" && obj.grav <= 0)
 		{
 			//Make sure the crouching bear is facing the right direction
-			if((this.dir == -1 && obj.x - obj.width/2 >= this.x)||(this.dir == 1 && obj.x + obj.width/2 <= this.x))
+			if((this.dir == -1 && obj.x - obj.width/2 >= this.x - 10)||(this.dir == 1 && obj.x + obj.width/2 <= this.x + 10))
 			{
 				obj.state = "clinging";
-				obj.x = this.x + (-this.dir * this.width/4);
+				if(obj.onBlock != -1)
+					obj.x = this.x - ((this.width/4)*this.dir) - (10 * this.dir);
 				obj.y = this.y + this.height/2 + obj.height/2 - 10;
 				obj.grav = 0;
 				obj.floor = obj.y + obj.height/2;
 				obj.clingDir = this.dir;
+				return;
 			}
 		}
 		if(this.state != "crouching")
@@ -286,17 +288,6 @@ function Bear(x, y, i)
 				setStackX(this.x+this.width/2+obj.width/2, obj, false);
 			}
 		}else{
-			if(obj.x < this.x && obj.x + obj.width/2 > this.x-this.width/2 && Math.abs(obj.y-(this.y-this.height/4)) < obj.height/2 - 5 && obj.state != "clinging")
-			{
-				setStackX(this.x-this.width/2-obj.width/2, obj, true);
-				setStackX(this.x-this.width/2-obj.width/2, obj, false);
-			}
-
-			if(obj.x > this.x && obj.x - obj.width/2 < this.x+this.width/2 && Math.abs(obj.y-(this.y-this.height/4)) < obj.height/2  - 5 && obj.state != "clinging")
-			{
-				setStackX(this.x+this.width/2+obj.width/2, obj, true);
-				setStackX(this.x+this.width/2+obj.width/2, obj, false);
-			}
 		}
 
 	}

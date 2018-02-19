@@ -6,10 +6,14 @@
 	<script type="text/javascript" src="Door.js"></script>
 	<script type="text/javascript" src="Key.js"></script>
 	<script type="text/javascript" src="Switch.js"></script>
-
+<script type="text/javascript" src="Ground.js"></script>
 	<script type="text/javascript" src="Pedestrian.js"></script>
+	<script type="text/javascript" src="Breifcase.js"></script>
 	<script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+	<link rel="icon" href="../assets/favicon.ico" type="image/x-icon"/>
+
 	<head>
+		<title>Glory To Bears</title>
 		<style>
 		.starting-canvas {
 			border: 4px solid black;
@@ -31,7 +35,7 @@
 		    transform: translate(-50%, -50%);
 		}
 		body {
-			background-color: #660000;
+			background-image: url("../assets/mainMenuBG.png");
 		}
 		@font-face {
 		  	font-family: "TitleFont";
@@ -119,7 +123,7 @@
 			{
 				if(loadedCount == imageCount)
 				{
-					document.getElementById("preloader").innerHTML = "CommencE";
+					document.getElementById("preloader").innerHTML = "BEGIn";
 					canvas.addEventListener("click",fullscreen);
 					clearInterval(checkLoadHandler);
 				}
@@ -164,9 +168,9 @@
 						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0],
 						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
 						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1],
 						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+						[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,4,0,0,1],
 						[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,2,0,0,0,0,0,0,2,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,2,0,0,0,0,1],
 						[0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,2,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,["s", false, 0,1,3,4],0,0,1,0,0,0,["p",200],0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,2,0,0,0,0,1]];
 
@@ -178,6 +182,7 @@
 			var keys = [];
 			var switches = [];
 			var pedestrians = [];
+			var briefcases = [];
 
 			//The index in bears[] of the bear the player is currently controlling
 			var active = 0;
@@ -202,7 +207,6 @@
 
 
 				canvas.removeEventListener("click", fullscreen);
-
 				loadMainMenu();
 			}
 
@@ -356,6 +360,20 @@
 				drawLivingRoom(0);
 			}
 
+			//Keyboard booleans
+			var keyADown = false;
+			var keySDown = false;
+			var keyDDown = false;
+
+			var keyLDown = false;
+			var keyRDown = false;
+			var KeyUDown = false;
+			var KeyODown = false;
+
+			var spaceDown = false;
+			var shiftDown = false;
+
+			var ctrlDown = false;
 			function openingCutscene()
 			{
 				clearInterval(menuHandler);
@@ -388,6 +406,55 @@
 		                    window.clearInterval(checkGP);
 		                }
 		            }, 500);
+
+		            window.addEventListener("keydown", function(e){
+		            	if(e.keyCode == 65)
+		            		keyADown = true;
+		            	if(e.keyCode == 68)
+		            		keyDDown = true;
+		            	if(e.keyCode == 83)
+		            		keySDown = true;
+
+		            	if(e.keyCode == 37)
+		            		keyLDown = true;
+		            	if(e.keyCode == 38)
+		            		keyUDown = true;
+		            	if(e.keyCode == 39)
+		            		keyRDown = true;
+		            	if(e.keyCode == 40)
+		            		keyODown = true;
+
+		            	if(e.keyCode == 32)
+		            		spaceDown = true;
+		            	if(e.keyCode == 16)
+		            		shiftDown = true;
+		            	if(e.keyCode == 17)
+		            		ctrlDown = true;
+		            });
+		            window.addEventListener("keyup", function(e){
+		            	if(e.keyCode == 65)
+		            		keyADown = false;
+		            	if(e.keyCode == 68)
+		            		keyDDown = false;
+		            	if(e.keyCode == 83)
+		            		keySDown = false;
+
+		            	if(e.keyCode == 37)
+		            		keyLDown = false;
+		            	if(e.keyCode == 38)
+		            		keyUDown = false;
+		            	if(e.keyCode == 39)
+		            		keyRDown = false;
+		            	if(e.keyCode == 40)
+		            		keyODown = false;
+
+		            	if(e.keyCode == 32)
+		            		spaceDown = false;
+		            	if(e.keyCode == 16)
+		            		shiftDown = false;
+		            	if(e.keyCode == 17)
+		            		ctrlDown = false;
+		            });
 		        }
 
 		        cutsceneHandler = setInterval(cutsceneDrawing, 16);
@@ -493,6 +560,11 @@
 		        			var d = new Door(j*75, i*75, j, i ,blocks.length);
 		        			blocks.push(d);
 		        		}
+		        		if(map[i][j] == 4)
+		        		{
+		        			var b = new Breifcase(j*75, i*75, briefcases.length);
+		        			briefcases.push(b);
+		        		}
 		        		if(map[i][j] instanceof Array)
 		        		{
 		        			if(map[i][j][0] == "k")
@@ -575,15 +647,6 @@
 							aPressed = false;
 						}
 
-						//Stop clinging
-						if(leftStickY > 0.9 && bear.state == "clinging")
-						{
-							bear.state = "idle";
-							bear.y += 5;
-							bear.floor = defaultFloor;
-						}
-						
-
 						//Crouching
 						if(gamePad.buttons[2].pressed && !xPressed){
 							if(bear.state == "crouching"){
@@ -643,6 +706,91 @@
 							dialogue.advance();
 							aPressed = true;
 						}else if(!gamePad.buttons[0].pressed){
+							aPressed = false;
+						}
+					}
+				}else{
+					if(!inCutscene)
+					{
+						var bear = bears[active];
+
+						//Hat Mechanic
+						if(!lTrigger && bear.onGround && ctrlDown && bear.stackCount == 0 && !bear.stacked && (bear.state == "idle" || bear.state == "walking"))
+						{
+							lTrigger = true;
+							bear.toHat();
+						}
+
+						if(lTrigger && !ctrlDown)
+						{
+							bear.toBear();
+							lTrigger = false;
+						}
+
+						if(keyADown || keyDDown){
+							if(keyADown)
+								bear.move(-10);
+							if(keyDDown)
+								bear.move(10);
+							if(bear.state != "crouching" && bear.state != "clinging")
+							{
+								if(bear.onGround)
+									bear.state = "walking";
+								else
+									bear.state = "idle";
+							}
+						}else if (bear.state == "walking"){
+							bear.state = "idle";
+						}
+						if(spaceDown && !aPressed){
+							bear.jump();
+							aPressed = true;
+						}else if(!spaceDown){
+							aPressed = false;
+						}
+
+						//Crouching
+						if(shiftDown && !xPressed){
+							if(bear.state == "crouching"){
+								bear.uncrouch();
+							}
+							else{
+								bear.crouch(leftStickX);
+							}
+							xPressed = true;
+						}else if(!shiftDown){
+							xPressed = false;
+						}
+
+						var closestInd = -1;
+						if(bears[active].onGround && bears[active].state != "clinging" && !bears[active].isHat)
+						{
+							if((keyRDown || keyLDown) && !rightStickXMoved)
+							{
+								var closestCandidates = findClosestX(-10, bears, bears[active]);
+
+								if(closestCandidates.length == 1){
+									active = closestCandidates[0];
+								}else{
+									var newClosestCandidates = [];
+									for (var j = 0;j<closestCandidates.length;j++)
+										newClosestCandidates.push(bears[closestCandidates[j]]);
+									var nextClosestCandidates = findClosestX(rightStickX, newClosestCandidates, bears[active]);
+									if(nextClosestCandidates.length >= 1)
+										active = nextClosestCandidates[0];
+								}
+
+								rightStickXMoved = true;
+							}else if(!keyRDown){
+								rightStickXMoved = false;
+							}
+
+						}
+					}else{
+						if(spaceDown && !aPressed){
+							dialogue.advance();
+							aPressed = true;
+						}else if(!spaceDown){
 							aPressed = false;
 						}
 					}
@@ -759,7 +907,8 @@
 
 		    	for(var p = 0;p<pedestrians.length; p++)
 		    		pedestrians[p].update();
-
+				for(var r = 0; r<briefcases.length;r++)
+		    		briefcases[r].update();
 		    	var max = maxCamDistance(bears);
 		    	if(max[0] > screenWH)
 		    		camera.scale = screenWH/max[1];
@@ -772,8 +921,10 @@
 
 
 		    var background = images[6];
+		    var ground = new Ground(0,defaultFloor + 5000);
 		    function gameDraw() {
 		    	graphics.drawImage(background, 0,0,canvas.width,canvas.height);
+		    	ground.draw();
 		    	graphics.fillStyle = "#686868";
 		    	graphics.font = '30px TitleFont';
 		    	for(var i = 0;i<bears.length; i++){
@@ -791,6 +942,9 @@
 		    		switches[i].draw();
 		    	for(var h = 0; h<pedestrians.length;h++)
 		    		pedestrians[h].draw();
+
+		    	for(var r = 0; r<briefcases.length;r++)
+		    		briefcases[r].draw();
 		    }
 
 
@@ -817,6 +971,8 @@
 					graphics.drawImage(this.pic, this.x - 25 - camera.x + screenWH * 1/camera.scale, this.y + arrDiff - 25 - camera.y  + screenHH * 1/camera.scale, 50, 50);
 					graphics.shadowBlur = 0;
 					graphics.restore();
+
+					
 				}
 
 				this.update = function() {
